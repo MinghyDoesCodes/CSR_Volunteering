@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Create User Profile - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>➕ Create User Profile</h1>
+    <a href="{{ url_for('list_user_profiles') }}" class="btn btn-secondary">← Back to List</a>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('create_user_profile') }}" class="form">
+        <div class="form-group">
+            <label for="profile_name">Profile Name <span class="required">*</span></label>
+            <input type="text" id="profile_name" name="profile_name" class="form-control" 
+                   placeholder="e.g., Volunteer Coordinator" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-control" rows="4" 
+                      placeholder="Describe this user profile/role..."></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Profile</button>
+            <a href="{{ url_for('list_user_profiles') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

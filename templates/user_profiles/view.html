@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}View User Profile - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🎭 User Profile Details</h1>
+    <div class="page-actions">
+        <a href="{{ url_for('edit_user_profile', profile_id=profile.id) }}" class="btn btn-primary">✏️ Edit</a>
+        {% if profile.is_active %}
+            <form method="POST" action="{{ url_for('suspend_user_profile', profile_id=profile.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to suspend this profile?')">🚫 Suspend</button>
+            </form>
+        {% else %}
+            <form method="POST" action="{{ url_for('activate_user_profile', profile_id=profile.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-success">✅ Activate</button>
+            </form>
+        {% endif %}
+        <a href="{{ url_for('list_user_profiles') }}" class="btn btn-secondary">← Back to List</a>
+    </div>
+</div>
+
+<div class="detail-container">
+    <div class="detail-card">
+        <h3>Profile Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>ID:</label>
+                <span>{{ profile.id }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Profile Name:</label>
+                <span><strong>{{ profile.profile_name }}</strong></span>
+            </div>
+            <div class="detail-item">
+                <label>Status:</label>
+                <span>
+                    {% if profile.is_active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-danger">Suspended</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <h3>Description</h3>
+        <p>{{ profile.description or 'No description provided.' }}</p>
+    </div>
+</div>
+{% endblock %}
+

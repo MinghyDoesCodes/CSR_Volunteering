@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}View User Account - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👤 User Account Details</h1>
+    <div class="page-actions">
+        <a href="{{ url_for('edit_user_account', user_id=user.id) }}" class="btn btn-primary">✏️ Edit</a>
+        {% if user.is_active %}
+            <form method="POST" action="{{ url_for('suspend_user_account', user_id=user.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to suspend this account?')">🚫 Suspend</button>
+            </form>
+        {% else %}
+            <form method="POST" action="{{ url_for('activate_user_account', user_id=user.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-success">✅ Activate</button>
+            </form>
+        {% endif %}
+        <a href="{{ url_for('list_user_accounts') }}" class="btn btn-secondary">← Back to List</a>
+    </div>
+</div>
+
+<div class="detail-container">
+    <div class="detail-card">
+        <h3>Account Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>ID:</label>
+                <span>{{ user.id }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Username:</label>
+                <span><strong>{{ user.username }}</strong></span>
+            </div>
+            <div class="detail-item">
+                <label>Email:</label>
+                <span>{{ user.email }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Status:</label>
+                <span>
+                    {% if user.is_active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-danger">Suspended</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <h3>Personal Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>First Name:</label>
+                <span>{{ user.first_name }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Last Name:</label>
+                <span>{{ user.last_name }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Phone Number:</label>
+                <span>{{ user.phone_number or 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+                <label>User Profile:</label>
+                <span><span class="badge badge-info">{{ user.user_profile.profile_name }}</span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <h3>System Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Created At:</label>
+                <span>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Updated At:</label>
+                <span>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

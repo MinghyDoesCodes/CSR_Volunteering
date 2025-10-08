@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Search User Accounts - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔍 Search User Accounts</h1>
+    <a href="{{ url_for('list_user_accounts') }}" class="btn btn-secondary">← Back to List</a>
+</div>
+
+<div class="search-container">
+    <form method="GET" action="{{ url_for('search_user_accounts') }}" class="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="keyword">Keyword</label>
+                <input type="text" id="keyword" name="keyword" class="form-control" 
+                       placeholder="Search by username, email, or name..." value="{{ keyword }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="profile_id">User Profile</label>
+                <select id="profile_id" name="profile_id" class="form-control">
+                    <option value="">All Profiles</option>
+                    {% for profile in profiles %}
+                        <option value="{{ profile.id }}" {% if profile.id == selected_profile %}selected{% endif %}>
+                            {{ profile.profile_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="">All Status</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="suspended" {% if selected_status == 'suspended' %}selected{% endif %}>Suspended</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🔍 Search</button>
+            <a href="{{ url_for('search_user_accounts') }}" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Profile</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if users %}
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="badge badge-info">{{ user.user_profile.profile_name }}</span></td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge badge-success">Active</span>
+                        {% else %}
+                            <span class="badge badge-danger">Suspended</span>
+                        {% endif %}
+                    </td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('view_user_account', user_id=user.id) }}" class="btn btn-sm btn-info">View</a>
+                        <a href="{{ url_for('edit_user_account', user_id=user.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No user accounts found matching your search criteria</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="table-info">
+    <p>Found: <strong>{{ users|length }}</strong> user account(s)</p>
+</div>
+{% endblock %}
+

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Search User Profiles - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔍 Search User Profiles</h1>
+    <a href="{{ url_for('list_user_profiles') }}" class="btn btn-secondary">← Back to List</a>
+</div>
+
+<div class="search-container">
+    <form method="GET" action="{{ url_for('search_user_profiles') }}" class="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="keyword">Keyword</label>
+                <input type="text" id="keyword" name="keyword" class="form-control" 
+                       placeholder="Search by name or description..." value="{{ keyword }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="">All Status</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="suspended" {% if selected_status == 'suspended' %}selected{% endif %}>Suspended</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🔍 Search</button>
+            <a href="{{ url_for('search_user_profiles') }}" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Profile Name</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if profiles %}
+                {% for profile in profiles %}
+                <tr>
+                    <td>{{ profile.id }}</td>
+                    <td><strong>{{ profile.profile_name }}</strong></td>
+                    <td>{{ profile.description or 'N/A' }}</td>
+                    <td>
+                        {% if profile.is_active %}
+                            <span class="badge badge-success">Active</span>
+                        {% else %}
+                            <span class="badge badge-danger">Suspended</span>
+                        {% endif %}
+                    </td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('view_user_profile', profile_id=profile.id) }}" class="btn btn-sm btn-info">View</a>
+                        <a href="{{ url_for('edit_user_profile', profile_id=profile.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No user profiles found matching your search criteria</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="table-info">
+    <p>Found: <strong>{{ profiles|length }}</strong> user profile(s)</p>
+</div>
+{% endblock %}
+

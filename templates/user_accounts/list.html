@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}User Accounts - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👥 User Accounts</h1>
+    <div class="page-actions">
+        <a href="{{ url_for('create_user_account') }}" class="btn btn-primary">➕ Create New Account</a>
+        <a href="{{ url_for('search_user_accounts') }}" class="btn btn-secondary">🔍 Search</a>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Profile</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if users %}
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="badge badge-info">{{ user.user_profile.profile_name }}</span></td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge badge-success">Active</span>
+                        {% else %}
+                            <span class="badge badge-danger">Suspended</span>
+                        {% endif %}
+                    </td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('view_user_account', user_id=user.id) }}" class="btn btn-sm btn-info">View</a>
+                        <a href="{{ url_for('edit_user_account', user_id=user.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No user accounts found</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="table-info">
+    <p>Total: <strong>{{ users|length }}</strong> user account(s)</p>
+</div>
+{% endblock %}
+

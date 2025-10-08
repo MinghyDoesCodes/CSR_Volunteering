@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Home - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🤝 Welcome to CSR Volunteering System</h1>
+    <p class="lead">Connecting corporate volunteers with persons-in-need</p>
+    <div class="hero-buttons">
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login to Portal</a>
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>User Management</h3>
+        <p>Manage user accounts and roles efficiently</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Match Volunteers</h3>
+        <p>Connect CSR representatives with persons-in-need</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Track Progress</h3>
+        <p>Monitor volunteer activities and generate reports</p>
+    </div>
+</div>
+{% endblock %}
+

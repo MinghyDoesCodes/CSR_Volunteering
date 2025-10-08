@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Create User Account - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>➕ Create User Account</h1>
+    <a href="{{ url_for('list_user_accounts') }}" class="btn btn-secondary">← Back to List</a>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('create_user_account') }}" class="form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="username">Username <span class="required">*</span></label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="password">Password <span class="required">*</span></label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="user_profile_id">User Profile <span class="required">*</span></label>
+                <select id="user_profile_id" name="user_profile_id" class="form-control" required>
+                    <option value="">Select Profile...</option>
+                    {% for profile in profiles %}
+                        <option value="{{ profile.id }}">{{ profile.profile_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="first_name">First Name <span class="required">*</span></label>
+                <input type="text" id="first_name" name="first_name" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="last_name">Last Name <span class="required">*</span></label>
+                <input type="text" id="last_name" name="last_name" class="form-control" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="phone_number">Phone Number</label>
+            <input type="tel" id="phone_number" name="phone_number" class="form-control">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Account</button>
+            <a href="{{ url_for('list_user_accounts') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
