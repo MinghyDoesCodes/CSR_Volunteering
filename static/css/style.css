@@ -256,6 +256,15 @@ body {
     color: white;
 }
 
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
 .btn-lg {
     padding: 0.75rem 2rem;
     font-size: 1.125rem;

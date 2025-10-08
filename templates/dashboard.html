@@ -57,47 +57,7 @@
         <a href="{{ url_for('list_user_profiles') }}" class="btn btn-primary">Manage Profiles</a>
     </div>
 
-    <div class="dashboard-card">
-        <div class="card-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="M21 21l-4.35-4.35"></path>
-            </svg>
-        </div>
-        <h3>Search</h3>
-        <p>Find users and profiles quickly</p>
-        <a href="{{ url_for('search_user_accounts') }}" class="btn btn-secondary">Search Users</a>
-    </div>
     {% endif %}
-</div>
-
-<div class="quick-actions">
-    <h3>Quick Actions</h3>
-    <div class="action-buttons">
-        {% if user.user_profile.profile_name == 'User Admin' %}
-        <a href="{{ url_for('create_user_account') }}" class="btn btn-success">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Create User Account
-        </a>
-        <a href="{{ url_for('create_user_profile') }}" class="btn btn-success">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Create User Profile
-        </a>
-        <a href="{{ url_for('search_user_accounts') }}" class="btn btn-secondary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="M21 21l-4.35-4.35"></path>
-            </svg>
-            Search Users
-        </a>
-        {% endif %}
-    </div>
 </div>
 {% endblock %}
 
