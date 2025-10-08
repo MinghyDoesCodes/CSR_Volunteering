@@ -4,7 +4,13 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>🔍 Search User Profiles</h1>
+    <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+        Search User Profiles
+    </h1>
     <a href="{{ url_for('list_user_profiles') }}" class="btn btn-secondary">← Back to List</a>
 </div>
 
@@ -28,7 +34,13 @@
         </div>
         
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">🔍 Search</button>
+            <button type="submit" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                Search
+            </button>
             <a href="{{ url_for('search_user_profiles') }}" class="btn btn-secondary">Clear</a>
         </div>
     </form>

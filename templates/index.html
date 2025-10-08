@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="hero">
-    <h1>🤝 Welcome to CSR Volunteering System</h1>
-    <p class="lead">Connecting corporate volunteers with persons-in-need</p>
+    <h1>Welcome to CSR Volunteering!</h1>
+    <p class="lead">Connecting Corporate Volunteers to Person-in-Need</p>
     <div class="hero-buttons">
         <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login to Portal</a>
     </div>
@@ -13,19 +13,36 @@
 
 <div class="features">
     <div class="feature-card">
-        <div class="feature-icon">👥</div>
-        <h3>User Management</h3>
-        <p>Manage user accounts and roles efficiently</p>
+        <div class="feature-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+        <h3>Get Help</h3>
+        <p>Request assistance and connect with CSR Representatives</p>
     </div>
     <div class="feature-card">
-        <div class="feature-icon">🎯</div>
-        <h3>Match Volunteers</h3>
-        <p>Connect CSR representatives with persons-in-need</p>
+        <div class="feature-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+        </div>
+        <h3>Volunteer to Help</h3>
+        <p>Find volunteer opportunities for Person-in-Need</p>
     </div>
     <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Track Progress</h3>
-        <p>Monitor volunteer activities and generate reports</p>
+        <div class="feature-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3v18h18"></path>
+                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
+            </svg>
+        </div>
+        <h3>Track Impact</h3>
+        <p>Review volunteering deeds and impact</p>
     </div>
 </div>
 {% endblock %}

@@ -10,11 +10,17 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <a href="{{ url_for('index') }}">🤝 CSR Volunteering</a>
+                <a href="{{ url_for('index') }}">CSR Volunteering</a>
             </div>
             <div class="nav-menu">
                 {% if session.get('username') %}
-                    <span class="nav-user">👤 {{ session.get('username') }} ({{ session.get('user_profile') }})</span>
+                    <span class="nav-user">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        {{ session.get('username') }} ({{ session.get('user_profile') }})
+                    </span>
                     <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
                     {% if session.get('user_profile') == 'User Admin' %}
                         <a href="{{ url_for('list_user_accounts') }}" class="nav-link">User Accounts</a>
@@ -22,7 +28,11 @@
                     {% endif %}
                     <a href="{{ url_for('logout') }}" class="nav-link btn-logout">Logout</a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="nav-link btn-primary">Login</a>
+                    {% if request.endpoint == 'login' %}
+                        <a href="{{ url_for('index') }}" class="nav-link">← Back to Home</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="nav-link btn-primary">Login</a>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -47,7 +57,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 CSR Volunteering System | CSIT314 Project</p>
+            <p>&copy; 2025 CSR Volunteering Platform | Nova Minds</p>
         </div>
     </footer>
 </body>

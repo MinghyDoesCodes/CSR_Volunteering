@@ -5,7 +5,7 @@
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        <h2>🔐 Login</h2>
+        <h2>Login</h2>
         <p>Enter your credentials to access the portal</p>
         
         <form method="POST" action="{{ url_for('login') }}" class="form">
@@ -22,10 +22,6 @@
             <button type="submit" class="btn btn-primary btn-block">Login</button>
         </form>
         
-        <div class="auth-help">
-            <p><strong>Default Admin Credentials:</strong></p>
-            <p>Username: <code>admin</code> | Password: <code>admin123</code></p>
-        </div>
     </div>
 </div>
 {% endblock %}
