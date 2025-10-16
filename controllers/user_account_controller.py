@@ -112,64 +112,6 @@ class UserAccountController:
             
         except Exception as e:
             return (False, f"Error retrieving user account: {str(e)}", None)
-        
-    def suspend_user_account(self, user_id):
-        """
-        User Story 6: As a User Admin, I want to suspend a user account
-        
-        Suspends a user account (user cannot login)
-        
-        Args:
-            user_id (int): The user account ID
-            
-        Returns:
-            tuple: (success: bool, message: str)
-        """
-        try:
-            user = self.session.query(UserAccount).filter_by(id=user_id).first()
-            
-            if not user:
-                return (False, f"User account with ID {user_id} not found")
-            
-            if not user.is_active:
-                return (False, f"User account '{user.username}' is already suspended")
-            
-            user.is_active = False
-            self.session.commit()
-            
-            return (True, f"User account '{user.username}' suspended successfully")
-            
-        except Exception as e:
-            self.session.rollback()
-            return (False, f"Error suspending user account: {str(e)}")
-    
-    def activate_user_account(self, user_id):
-        """
-        Reactivates a suspended user account
-        
-        Args:
-            user_id (int): The user account ID
-            
-        Returns:
-            tuple: (success: bool, message: str)
-        """
-        try:
-            user = self.session.query(UserAccount).filter_by(id=user_id).first()
-            
-            if not user:
-                return (False, f"User account with ID {user_id} not found")
-            
-            if user.is_active:
-                return (False, f"User account '{user.username}' is already active")
-            
-            user.is_active = True
-            self.session.commit()
-            
-            return (True, f"User account '{user.username}' activated successfully")
-            
-        except Exception as e:
-            self.session.rollback()
-            return (False, f"Error activating user account: {str(e)}")
     
     def search_user_accounts(self, keyword=None, profile_id=None, is_active=None):
         """

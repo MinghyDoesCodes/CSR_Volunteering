@@ -196,7 +196,7 @@ def updateUserAccount(user_id):
 
 @app.route('/user-accounts/<int:user_id>/suspend', methods=['POST'])
 @require_user_admin
-def suspend_user_account(user_id):
+def suspendUserAccount(user_id):
     success, message = suspendUserAccountCtrl.suspendUser(userID = user_id)
     flash(message, 'success' if success else 'error')
     return redirect(url_for('view_user_account', user_id = user_id))
@@ -204,7 +204,7 @@ def suspend_user_account(user_id):
 
 @app.route('/user-accounts/<int:user_id>/activate', methods=['POST'])
 @require_user_admin
-def activate_user_account(user_id):
+def activateUserAccount(user_id):
     success, message = suspendUserAccountCtrl.activateUser(userID = user_id)
     flash(message, 'success' if success else 'error')
     return redirect(url_for('view_user_account', user_id = user_id))
