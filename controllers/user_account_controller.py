@@ -112,70 +112,7 @@ class UserAccountController:
             
         except Exception as e:
             return (False, f"Error retrieving user account: {str(e)}", None)
-    
-    def update_user_account(self, user_id, email=None, first_name=None, last_name=None,
-                           phone_number=None, user_profile_id=None):
-        """
-        User Story 5: As a User Admin, I want to update a user account
         
-        Updates user account information
-        Note: Username and password are not updated here (separate methods)
-        
-        Args:
-            user_id (int): The user account ID
-            email (str, optional): New email
-            first_name (str, optional): New first name
-            last_name (str, optional): New last name
-            phone_number (str, optional): New phone number
-            user_profile_id (int, optional): New user profile ID
-            
-        Returns:
-            tuple: (success: bool, message: str, user_account: UserAccount or None)
-        """
-        try:
-            user = self.session.query(UserAccount).filter_by(id=user_id).first()
-            
-            if not user:
-                return (False, f"User account with ID {user_id} not found", None)
-            
-            # Update fields if provided
-            if email is not None:
-                # Check if email already exists for another user
-                existing = self.session.query(UserAccount).filter(
-                    UserAccount.email == email,
-                    UserAccount.id != user_id
-                ).first()
-                if existing:
-                    return (False, f"Email '{email}' already exists", None)
-                user.email = email
-            
-            if first_name is not None:
-                user.first_name = first_name
-            
-            if last_name is not None:
-                user.last_name = last_name
-            
-            if phone_number is not None:
-                user.phone_number = phone_number
-            
-            if user_profile_id is not None:
-                # Validate profile exists and is active
-                profile = self.session.query(UserProfile).filter_by(
-                    id=user_profile_id,
-                    is_active=True
-                ).first()
-                if not profile:
-                    return (False, "Invalid or inactive user profile selected", None)
-                user.user_profile_id = user_profile_id
-            
-            self.session.commit()
-            
-            return (True, f"User account '{user.username}' updated successfully", user)
-            
-        except Exception as e:
-            self.session.rollback()
-            return (False, f"Error updating user account: {str(e)}", None)
-    
     def suspend_user_account(self, user_id):
         """
         User Story 6: As a User Admin, I want to suspend a user account

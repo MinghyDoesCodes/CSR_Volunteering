@@ -8,6 +8,8 @@ from database.db_config import init_database, get_session
 from controllers.authentication_controller import AuthenticationController
 from controllers.user_account_controller import UserAccountController
 from controllers.user_profile_controller import UserProfileController
+from controllers.updateUserAccountCtrl import UpdateUserAccountCtrl
+from controllers.suspendUserAccountCtrl import SuspendUserAccountCtrl
 import os
 
 # Initialize Flask app
@@ -18,6 +20,8 @@ app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in
 auth_controller = AuthenticationController()
 account_controller = UserAccountController()
 profile_controller = UserProfileController()
+updateUserAccountCtrl = UpdateUserAccountCtrl()
+suspendUserAccountCtrl = SuspendUserAccountCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -61,7 +65,6 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page"""
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -82,10 +85,10 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """Logout"""
-    success, message = auth_controller.logout()
+    username = session.get('username', 'Unknown')
+    auth_controller.current_user = None
     session.clear()
-    flash(message, 'success')
+    flash(f"{username} logged out successfully ", 'success')
     return redirect(url_for('index'))
 
 
@@ -153,8 +156,7 @@ def view_user_account(user_id):
 
 @app.route('/user-accounts/<int:user_id>/edit', methods=['GET', 'POST'])
 @require_user_admin
-def edit_user_account(user_id):
-    """Edit user account"""
+def updateUserAccount(user_id):
     if request.method == 'POST':
         email = request.form.get('email')
         first_name = request.form.get('first_name')
@@ -162,18 +164,18 @@ def edit_user_account(user_id):
         phone_number = request.form.get('phone_number')
         user_profile_id = request.form.get('user_profile_id')
         
-        success, message, user = account_controller.update_user_account(
-            user_id,
-            email=email if email else None,
-            first_name=first_name if first_name else None,
-            last_name=last_name if last_name else None,
-            phone_number=phone_number if phone_number else None,
-            user_profile_id=int(user_profile_id) if user_profile_id else None
+        success, message = updateUserAccountCtrl.updateAccount(
+            userID = user_id,
+            email = email if email else None,
+            firstName = first_name if first_name else None,
+            lastName = last_name if last_name else None,
+            phoneNumber = phone_number if phone_number else None,
+            userProfileID = int(user_profile_id) if user_profile_id else None
         )
         
         if success:
             flash(message, 'success')
-            return redirect(url_for('view_user_account', user_id=user_id))
+            return redirect(url_for('view_user_account', user_id = user_id))
         else:
             flash(message, 'error')
     
@@ -185,25 +187,23 @@ def edit_user_account(user_id):
     
     # Get profiles for dropdown
     profiles = profile_controller.get_active_user_profiles()
-    return render_template('user_accounts/edit.html', user=user, profiles=profiles)
+    return render_template('user_accounts/edit.html', user = user, profiles = profiles)
 
 
 @app.route('/user-accounts/<int:user_id>/suspend', methods=['POST'])
 @require_user_admin
 def suspend_user_account(user_id):
-    """Suspend user account"""
-    success, message = account_controller.suspend_user_account(user_id)
+    success, message = suspendUserAccountCtrl.suspendUser(userID = user_id)
     flash(message, 'success' if success else 'error')
-    return redirect(url_for('view_user_account', user_id=user_id))
+    return redirect(url_for('view_user_account', user_id = user_id))
 
 
 @app.route('/user-accounts/<int:user_id>/activate', methods=['POST'])
 @require_user_admin
 def activate_user_account(user_id):
-    """Activate user account"""
-    success, message = account_controller.activate_user_account(user_id)
+    success, message = suspendUserAccountCtrl.activateUser(userID = user_id)
     flash(message, 'success' if success else 'error')
-    return redirect(url_for('view_user_account', user_id=user_id))
+    return redirect(url_for('view_user_account', user_id = user_id))
 
 
 @app.route('/user-accounts/search')
