@@ -10,24 +10,12 @@ class AuthenticationController:
     
     def login(self, username, password):
         try:
-            user = UserAccount.findByUsername(self.session, username)
-            
-            if not user:
-                return (False, "No user found", None)
-            
-            if not user.verifyPassword(password):
-                return (False, "Incorrect password", None)
-            
-            user.checkActive()
-
-            # Successful login
-            self.current_user = user
-            return (True, "Login successful", user)
-        
-        except ValueError as ve:
-            return (False, str(ve), None)
-        except Exception as e:
-            return (False, f"Login error: {str(e)}", None)
+            user = UserAccount.login(self.session, username, password)
+            if user:
+                self.current_user = user
+                return user
+        except ValueError as e:
+            raise e
     
     def get_current_user(self):
         """

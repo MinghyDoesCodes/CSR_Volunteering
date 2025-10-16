@@ -34,22 +34,23 @@ class UserAccount(Base):
     # Timestamps
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
-
-    def findByUsername(session, username):
-        """Fetch a user account by username"""
-        return session.query(UserAccount).filter_by(username=username).first()
     
-    def verifyPassword(self, password):
-        """Verify a plaintext password against the stored hash"""
-        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
-    
-    def checkActive(self):
-        """Check if the user account and user profile is active"""
-        if not self.is_active:
+    def login(session, username, password):
+        """Authenticate user by username and password"""
+        user = session.query(UserAccount).filter_by(username=username).first()
+        if not user:
+            raise ValueError("No user found with this username.")
+        
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+            raise ValueError("Incorrect password.")
+        
+        if not user.is_active:
             raise ValueError("Account is suspended. Please contact administrator.")
-        if self.user_profile and not self.user_profile.is_active:
+        
+        if not user.user_profile or not user.user_profile.is_active:
             raise ValueError("Your user profile is suspended. Please contact administrator.")
-        return True
+        
+        return user
 
     def findById(session, userID):
         """Fetch a user account by ID"""

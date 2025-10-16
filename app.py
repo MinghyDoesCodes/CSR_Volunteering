@@ -69,16 +69,20 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        success, message, user = auth_controller.login(username, password)
-        
-        if success:
-            session['user_id'] = user.id
-            session['username'] = user.username
-            session['user_profile'] = user.user_profile.profile_name
-            flash(message, 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash(message, 'error')
+        try:
+            user = auth_controller.login(username, password)
+            if user:
+                session['user_id'] = user.id
+                session['username'] = user.username
+                session['user_profile'] = user.user_profile.profile_name
+                flash(f"Welcome, {user.first_name}!", 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash("Login failed. Please try again.", 'error')
+        except ValueError as ve:
+            flash(str(ve), 'error')
+        except Exception as e:
+            flash(f"An unexpected error occurred: {str(e)}", 'error')
     
     return render_template('login.html')
 
