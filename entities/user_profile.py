@@ -39,4 +39,71 @@ class UserProfile(Base):
             'description': self.description,
             'is_active': self.is_active
         }
+    
+    @classmethod
+    def create_user_profile(cls, profile_name, description=None):
+        """
+        Creates a new UserProfile instance
+        
+        Args:
+            profile_name (str): Name of the profile/role
+            description (str, optional): Description of the profile
+            
+        Returns:
+            UserProfile: New UserProfile instance
+        """
+        return cls(
+            profile_name=profile_name,
+            description=description,
+            is_active=True
+        )
+    
+    @classmethod
+    def findById(cls, session, profile_id):
+        """Fetch a user profile by ID"""
+        return session.query(cls).filter_by(id=profile_id).first()
+    
+    @classmethod
+    def checkProfileNameExists(cls, session, profile_name, exclude_id=None):
+        """Check if a profile name already exists in the database"""
+        query = session.query(cls).filter(cls.profile_name == profile_name)
+        if exclude_id:
+            query = query.filter(cls.id != exclude_id)
+        return session.query(query.exists()).scalar()
+    
+    def updateProfile(self, session, **kwargs):
+        """
+        Update profile fields safely while maintaining unique constraints.
+        Accepts only whitelisted fields.
+        """
+        allowed_fields = {'profile_name', 'description'}
+        
+        update_data = {k: v for k, v in kwargs.items() if k in allowed_fields}
+        
+        # Check if profile_name is being updated and if it's unique
+        if 'profile_name' in update_data and UserProfile.checkProfileNameExists(session, update_data['profile_name'], exclude_id=self.id):
+            raise ValueError("Profile name already in use by another profile.")
+        
+        for key, value in update_data.items():
+            setattr(self, key, value)
+        
+        session.commit()
+        return True
+    
+    def suspendProfile(self, session):
+        """Suspend the user profile"""
+        if not self.is_active:
+            return False  # Already suspended
+        self.is_active = False
+        session.commit()
+        return True
+    
+    def activateProfile(self, session):
+        """Activate the user profile"""
+        if self.is_active:
+            return False  # Already active
+        self.is_active = True
+        session.commit()
+        return True
+    
 

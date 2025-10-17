@@ -46,11 +46,10 @@ class UserProfileController:
             if existing:
                 return (False, f"Profile '{profile_name}' already exists", None)
             
-            # Create new profile
-            new_profile = UserProfile(
+            # Create new profile using Entity method
+            new_profile = UserProfile.create_user_profile(
                 profile_name=profile_name,
-                description=description,
-                is_active=True
+                description=description
             )
             
             self.session.add(new_profile)
@@ -75,7 +74,7 @@ class UserProfileController:
             tuple: (success: bool, message: str, profile: UserProfile or None)
         """
         try:
-            profile = self.session.query(UserProfile).filter_by(id=profile_id).first()
+            profile = UserProfile.findById(self.session, profile_id)
             
             if not profile:
                 return (False, f"User profile with ID {profile_id} not found", None)
@@ -100,29 +99,29 @@ class UserProfileController:
             tuple: (success: bool, message: str, profile: UserProfile or None)
         """
         try:
-            profile = self.session.query(UserProfile).filter_by(id=profile_id).first()
+            profile = UserProfile.findById(self.session, profile_id)
             
             if not profile:
                 return (False, f"User profile with ID {profile_id} not found", None)
             
-            # Update fields if provided
-            if profile_name is not None:
-                # Check if new name already exists for another profile
-                existing = self.session.query(UserProfile).filter(
-                    UserProfile.profile_name == profile_name,
-                    UserProfile.id != profile_id
-                ).first()
-                if existing:
-                    return (False, f"Profile name '{profile_name}' already exists", None)
-                profile.profile_name = profile_name
+            # Prepare data for update
+            update_data = {
+                'profile_name': profile_name,
+                'description': description
+            }
             
-            if description is not None:
-                profile.description = description
+            # Remove None values for fields not being updated
+            update_data = {k: v for k, v in update_data.items() if v is not None}
             
-            self.session.commit()
+            success = profile.updateProfile(self.session, **update_data)
             
-            return (True, f"User profile '{profile.profile_name}' updated successfully", profile)
+            if success:
+                return (True, f"User profile '{profile.profile_name}' updated successfully", profile)
+            else:
+                return (False, "Failed to update user profile", None)
             
+        except ValueError as ve:
+            return (False, str(ve), None)
         except Exception as e:
             self.session.rollback()
             return (False, f"Error updating user profile: {str(e)}", None)
@@ -141,18 +140,17 @@ class UserProfileController:
             tuple: (success: bool, message: str)
         """
         try:
-            profile = self.session.query(UserProfile).filter_by(id=profile_id).first()
+            profile = UserProfile.findById(self.session, profile_id)
             
             if not profile:
                 return (False, f"User profile with ID {profile_id} not found")
             
-            if not profile.is_active:
+            success = profile.suspendProfile(self.session)
+            
+            if success:
+                return (True, f"User profile '{profile.profile_name}' suspended successfully")
+            else:
                 return (False, f"User profile '{profile.profile_name}' is already suspended")
-            
-            profile.is_active = False
-            self.session.commit()
-            
-            return (True, f"User profile '{profile.profile_name}' suspended successfully")
             
         except Exception as e:
             self.session.rollback()
@@ -169,18 +167,17 @@ class UserProfileController:
             tuple: (success: bool, message: str)
         """
         try:
-            profile = self.session.query(UserProfile).filter_by(id=profile_id).first()
+            profile = UserProfile.findById(self.session, profile_id)
             
             if not profile:
                 return (False, f"User profile with ID {profile_id} not found")
             
-            if profile.is_active:
+            success = profile.activateProfile(self.session)
+            
+            if success:
+                return (True, f"User profile '{profile.profile_name}' activated successfully")
+            else:
                 return (False, f"User profile '{profile.profile_name}' is already active")
-            
-            profile.is_active = True
-            self.session.commit()
-            
-            return (True, f"User profile '{profile.profile_name}' activated successfully")
             
         except Exception as e:
             self.session.rollback()
