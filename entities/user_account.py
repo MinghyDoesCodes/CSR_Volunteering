@@ -5,7 +5,6 @@ from database.db_config import Base
 import bcrypt
 from entities.user_profile import UserProfile
 
-
 class UserAccount(Base):
     __tablename__ = 'user_accounts'
     
@@ -63,59 +62,54 @@ class UserAccount(Base):
             query = query.filter(UserAccount.id != excludeID)
         return session.query(query.exists()).scalar()
     
-    # def checkUsernameExists(cls, session, username, excludeID=None):
-    #     """Check if a username already exists in the database"""
-    #     query = session.query(cls).filter(cls.username == username)
-    #     if excludeID:
-    #         query = query.filter(cls.id != excludeID)
-    #     return session.query(query.exists()).scalar()
+    def chechkUsernameExists(session, username, excludeID=None):
+        """Check if a username already exists in the database"""
+        query = session.query(UserAccount).filter(UserAccount.username == username)
+        if excludeID:
+            query = query.filter(UserAccount.id != excludeID)
+        return session.query(query.exists()).scalar()
     
-    def updateAccount(self, session, **kwargs):
-        """
-        Update user fields safely while maintaining unique constraints.
-        Accepts only whitelisted fields.
-        """
-        allowed_fields = {'email', 'first_name', 'last_name', 'phone_number', 'user_profile_id'}
+    def updateAccount(self, session, email, userName, firstName, lastName, phoneNumber, userProfileID):
+        if UserAccount.checkEmailExists(session, email, excludeID = self.id):
+            return 1  # Email already in use
         
-        update_data = {k: v for k, v in kwargs.items() if k in allowed_fields}
+        if UserAccount.chechkUsernameExists(session, userName, excludeID = self.id):
+            return 2  # Username already in use
+
+        profile = session.query(UserProfile).filter_by(
+            id = userProfileID,
+            is_active = True
+        ).first()
+        if not profile:
+            return 3  # Invalid or inactive user profile selected.
         
-        # Check if email is being updated and if it's unique
-        if 'email' in update_data and UserAccount.checkEmailExists(session, update_data['email'], excludeID=self.id):
-            raise ValueError("Email already in use by another account.")      
-            
-        # Check if user_profile_id is valid and active
-        if 'user_profile_id' in update_data:
-            profile = session.query(UserProfile).filter_by(
-                id = update_data['user_profile_id'],
-                is_active = True
-            ).first()
-            if not profile:
-                raise ValueError("Invalid or inactive user profile selected.")
-
-        for key, value in update_data.items():
-            setattr(self, key, value)
-
+        self.email = email
+        self.username = userName
+        self.first_name = firstName
+        self.last_name = lastName
+        self.phone_number = phoneNumber
+        self.user_profile_id = userProfileID
         self.updated_at = datetime.now()
         session.commit()
-        return True
+        return 4  # Success
     
     def suspendUser(self, session):
         """Suspend the user account"""
         if not self.is_active:
-            return False  # Already suspended
+            return 1  # Already suspended
         self.is_active = False
         self.updated_at = datetime.now()
         session.commit()
-        return True
+        return 2 # Successfully suspended
     
     def activate(self, session):
         """Activate the user account"""
         if self.is_active:
-            return False  # Already active
+            return 1  # Already active
         self.is_active = True
         self.updated_at = datetime.now()
         session.commit()
-        return True
+        return 2 # Successfully activated
     
     def __repr__(self):
         """String representation for debugging"""

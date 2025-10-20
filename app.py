@@ -163,25 +163,33 @@ def view_user_account(user_id):
 def updateUserAccount(user_id):
     if request.method == 'POST':
         email = request.form.get('email')
+        userName = request.form.get('username')
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         phone_number = request.form.get('phone_number')
         user_profile_id = request.form.get('user_profile_id')
         
-        success, message = updateUserAccountCtrl.updateAccount(
+        result = updateUserAccountCtrl.updateAccount(
             userID = user_id,
             email = email if email else None,
+            userName = userName if userName else None,
             firstName = first_name if first_name else None,
             lastName = last_name if last_name else None,
             phoneNumber = phone_number if phone_number else None,
             userProfileID = int(user_profile_id) if user_profile_id else None
         )
         
-        if success:
-            flash(message, 'success')
-            return redirect(url_for('view_user_account', user_id = user_id))
-        else:
-            flash(message, 'error')
+        if result == 0:
+            flash(f"User account with ID {user_id} not found", 'error')
+        elif result == 1:
+            flash("Email already in use", 'error')
+        elif result == 2:
+            flash("Username already in use", 'error')
+        elif result == 3:
+            flash("Invalid or inactive user profile selected", 'error')
+        elif result == 4:
+            flash("User account updated successfully", 'success')
+            return redirect(url_for('view_user_account', user_id=user_id))
     
     # Get user details
     success, message, user = account_controller.view_user_account(user_id)
@@ -197,18 +205,26 @@ def updateUserAccount(user_id):
 @app.route('/user-accounts/<int:user_id>/suspend', methods=['POST'])
 @require_user_admin
 def suspendUserAccount(user_id):
-    success, message = suspendUserAccountCtrl.suspendUser(userID = user_id)
-    flash(message, 'success' if success else 'error')
-    return redirect(url_for('view_user_account', user_id = user_id))
-
+    result = suspendUserAccountCtrl.suspendUser(userID = user_id)
+    if result == 0:
+        flash(f"User account with ID {user_id} not found", 'error')
+    elif result == 1:
+        flash("User account is already suspended", 'info')
+    elif result == 2:
+        flash("User account suspended successfully", 'success')
+        return redirect(url_for('view_user_account', user_id = user_id))
 
 @app.route('/user-accounts/<int:user_id>/activate', methods=['POST'])
 @require_user_admin
 def activateUserAccount(user_id):
-    success, message = suspendUserAccountCtrl.activateUser(userID = user_id)
-    flash(message, 'success' if success else 'error')
-    return redirect(url_for('view_user_account', user_id = user_id))
-
+    result = suspendUserAccountCtrl.activateUser(userID = user_id)
+    if result == 0:
+        flash(f"User account with ID {user_id} not found", 'error')
+    elif result == 1:
+        flash("User account is already active", 'info')
+    elif result == 2:
+        flash("User account activated successfully", 'success')
+        return redirect(url_for('view_user_account', user_id = user_id))
 
 @app.route('/user-accounts/search')
 @require_user_admin

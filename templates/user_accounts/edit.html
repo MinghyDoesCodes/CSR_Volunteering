@@ -16,8 +16,9 @@
 
 <div class="form-container">
     <form method="POST" action="{{ url_for('updateUserAccount', user_id=user.id) }}" class="form">
-        <div class="form-info">
-            <p><strong>Username:</strong> {{ user.username }} (cannot be changed)</p>
+        <div class="form-group">
+            <label for="username">Username <span class="required">*</span></label>
+            <input type="text" id="username" name="username" class="form-control" value="{{ user.username }}" required>
         </div>
 
         <div class="form-row">

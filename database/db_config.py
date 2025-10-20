@@ -23,7 +23,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Thread-safe session
 session = scoped_session(SessionLocal)
 
-
 def get_session():
     """
     Get a database session
@@ -31,13 +30,11 @@ def get_session():
     """
     return session
 
-
 def close_session():
     """
     Close the current database session
     """
     session.remove()
-
 
 def init_database():
     """
@@ -51,4 +48,3 @@ def init_database():
     # Create all tables
     Base.metadata.create_all(bind=engine)
     print("Database initialized successfully!")
-
