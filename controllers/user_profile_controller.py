@@ -24,66 +24,6 @@ class UserProfileController:
     def __init__(self):
         self.session = get_session()
     
-    def create_user_profile(self, profile_name, description=None):
-        """
-        User Story 8: As a User Admin, I want to create a user profile
-        
-        Creates a new user profile (role type)
-        
-        Args:
-            profile_name (str): Name of the profile/role
-            description (str, optional): Description of the profile
-            
-        Returns:
-            tuple: (success: bool, message: str, profile: UserProfile or None)
-        """
-        try:
-            # Check if profile name already exists
-            existing = self.session.query(UserProfile).filter_by(
-                profile_name=profile_name
-            ).first()
-            
-            if existing:
-                return (False, f"Profile '{profile_name}' already exists", None)
-            
-            # Create new profile using Entity method
-            new_profile = UserProfile.create_user_profile(
-                profile_name=profile_name,
-                description=description
-            )
-            
-            self.session.add(new_profile)
-            self.session.commit()
-            
-            return (True, f"User profile '{profile_name}' created successfully", new_profile)
-            
-        except Exception as e:
-            self.session.rollback()
-            return (False, f"Error creating user profile: {str(e)}", None)
-    
-    def view_user_profile(self, profile_id):
-        """
-        User Story 9: As a User Admin, I want to view a user profile
-        
-        Retrieves details of a specific user profile
-        
-        Args:
-            profile_id (int): The profile ID
-            
-        Returns:
-            tuple: (success: bool, message: str, profile: UserProfile or None)
-        """
-        try:
-            profile = UserProfile.findById(self.session, profile_id)
-            
-            if not profile:
-                return (False, f"User profile with ID {profile_id} not found", None)
-            
-            return (True, "User profile retrieved successfully", profile)
-            
-        except Exception as e:
-            return (False, f"Error retrieving user profile: {str(e)}", None)
-    
     def update_user_profile(self, profile_id, profile_name=None, description=None):
         """
         User Story 10: As a User Admin, I want to update a user profile

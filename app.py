@@ -10,6 +10,8 @@ from controllers.user_account_controller import UserAccountController
 from controllers.user_profile_controller import UserProfileController
 from controllers.updateUserAccountCtrl import UpdateUserAccountCtrl
 from controllers.suspendUserAccountCtrl import SuspendUserAccountCtrl
+from controllers.createUserProfileCtrl import CreateUserProfileCtrl
+from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
 import os
 
 # Initialize Flask app
@@ -22,6 +24,8 @@ account_controller = UserAccountController()
 profile_controller = UserProfileController()
 updateUserAccountCtrl = UpdateUserAccountCtrl()
 suspendUserAccountCtrl = SuspendUserAccountCtrl()
+createUserProfileCtrl = CreateUserProfileCtrl()
+viewUserProfileCtrl = ViewUserProfileCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -278,15 +282,17 @@ def create_user_profile():
         profile_name = request.form.get('profile_name')
         description = request.form.get('description')
         
-        success, message, profile = profile_controller.create_user_profile(
+        result = createUserProfileCtrl.createProfile(
             profile_name, description if description else None
         )
         
-        if success:
-            flash(message, 'success')
+        if result == 2:  # Success
+            flash(f"User profile '{profile_name}' created successfully", 'success')
             return redirect(url_for('list_user_profiles'))
-        else:
-            flash(message, 'error')
+        elif result == 1:  # Already exists
+            flash(f"Profile '{profile_name}' already exists", 'error')
+        else:  # Error
+            flash("Error creating user profile", 'error')
     
     return render_template('user_profiles/create.html')
 
@@ -295,10 +301,10 @@ def create_user_profile():
 @require_user_admin
 def view_user_profile(profile_id):
     """View user profile details"""
-    success, message, profile = profile_controller.view_user_profile(profile_id)
+    result, profile = viewUserProfileCtrl.viewProfile(profile_id)
     
-    if not success:
-        flash(message, 'error')
+    if result == 0:  # Not found or error
+        flash(f"User profile with ID {profile_id} not found", 'error')
         return redirect(url_for('list_user_profiles'))
     
     return render_template('user_profiles/view.html', profile=profile)
@@ -325,9 +331,9 @@ def edit_user_profile(profile_id):
             flash(message, 'error')
     
     # Get profile details
-    success, message, profile = profile_controller.view_user_profile(profile_id)
-    if not success:
-        flash(message, 'error')
+    result, profile = viewUserProfileCtrl.viewProfile(profile_id)
+    if result == 0:  # Not found or error
+        flash(f"User profile with ID {profile_id} not found", 'error')
         return redirect(url_for('list_user_profiles'))
     
     return render_template('user_profiles/edit.html', profile=profile)

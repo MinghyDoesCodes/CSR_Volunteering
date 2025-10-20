@@ -7,6 +7,8 @@ Handles all user interactions and displays (CLI-based for now)
 from controllers.authentication_controller import AuthenticationController
 from controllers.user_account_controller import UserAccountController
 from controllers.user_profile_controller import UserProfileController
+from controllers.createUserProfileCtrl import CreateUserProfileCtrl
+from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
 
 
 class UserAdminBoundary:
@@ -21,6 +23,8 @@ class UserAdminBoundary:
         self.auth_controller = AuthenticationController()
         self.account_controller = UserAccountController()
         self.profile_controller = UserProfileController()
+        self.create_profile_ctrl = CreateUserProfileCtrl()
+        self.view_profile_ctrl = ViewUserProfileCtrl()
     
     def display_menu(self):
         """Display the main menu for User Admin"""
@@ -315,15 +319,14 @@ class UserAdminBoundary:
         profile_name = input("Profile Name: ").strip()
         description = input("Description (optional): ").strip() or None
         
-        success, message, profile = self.profile_controller.create_user_profile(
-            profile_name, description
-        )
+        result = self.create_profile_ctrl.createProfile(profile_name, description)
         
-        if success:
-            print(f"\n✓ {message}")
-            self.display_user_profile(profile)
-        else:
-            print(f"\n✗ {message}")
+        if result == 2:  # Success
+            print(f"\n✓ User profile '{profile_name}' created successfully")
+        elif result == 1:  # Already exists
+            print(f"\n✗ Profile '{profile_name}' already exists")
+        else:  # Error
+            print(f"\n✗ Error creating user profile")
     
     def handle_view_user_profile(self):
         """Handle viewing a user profile"""
@@ -335,13 +338,13 @@ class UserAdminBoundary:
             print("\n✗ Invalid ID")
             return
         
-        success, message, profile = self.profile_controller.view_user_profile(profile_id)
+        result, profile = self.view_profile_ctrl.viewProfile(profile_id)
         
-        if success:
-            print(f"\n✓ {message}")
+        if result == 1:  # Success
+            print(f"\n✓ User profile retrieved successfully")
             self.display_user_profile(profile)
-        else:
-            print(f"\n✗ {message}")
+        else:  # Not found or error
+            print(f"\n✗ User profile with ID {profile_id} not found")
     
     def handle_update_user_profile(self):
         """Handle updating a user profile"""
@@ -354,9 +357,9 @@ class UserAdminBoundary:
             return
         
         # View current details
-        success, message, profile = self.profile_controller.view_user_profile(profile_id)
-        if not success:
-            print(f"\n✗ {message}")
+        result, profile = self.view_profile_ctrl.viewProfile(profile_id)
+        if result == 0:  # Not found or error
+            print(f"\n✗ User profile with ID {profile_id} not found")
             return
         
         print("\nCurrent Details:")
@@ -387,9 +390,9 @@ class UserAdminBoundary:
             return
         
         # View current status
-        success, message, profile = self.profile_controller.view_user_profile(profile_id)
-        if not success:
-            print(f"\n✗ {message}")
+        result, profile = self.view_profile_ctrl.viewProfile(profile_id)
+        if result == 0:  # Not found or error
+            print(f"\n✗ User profile with ID {profile_id} not found")
             return
         
         status = "Active" if profile.is_active else "Suspended"
