@@ -82,13 +82,13 @@ class UserProfile(Base):
         
         # Check if profile_name is being updated and if it's unique
         if 'profile_name' in update_data and UserProfile.checkProfileNameExists(session, update_data['profile_name'], exclude_id=self.id):
-            raise ValueError("Profile name already in use by another profile.")
+            return 1 # Profile name already in use
         
         for key, value in update_data.items():
             setattr(self, key, value)
         
         session.commit()
-        return True
+        return 2 # Success
     
     def suspendProfile(self, session):
         """Suspend the user profile"""
@@ -105,5 +105,4 @@ class UserProfile(Base):
         self.is_active = True
         session.commit()
         return True
-    
 

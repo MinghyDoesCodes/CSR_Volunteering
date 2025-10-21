@@ -11,6 +11,7 @@ from controllers.user_profile_controller import UserProfileController
 from controllers.updateUserAccountCtrl import UpdateUserAccountCtrl
 from controllers.suspendUserAccountCtrl import SuspendUserAccountCtrl
 from controllers.createUserProfileCtrl import CreateUserProfileCtrl
+from controllers.updateUserProfileCtrl import updateUserProfileCtrl
 from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
 import os
 
@@ -318,17 +319,20 @@ def edit_user_profile(profile_id):
         profile_name = request.form.get('profile_name')
         description = request.form.get('description')
         
-        success, message, profile = profile_controller.update_user_profile(
-            profile_id,
+        result = updateUserProfileCtrl().updateProfile(
+            profile_id= profile_id,
             profile_name=profile_name if profile_name else None,
             description=description if description else None
         )
         
-        if success:
-            flash(message, 'success')
+        if result == 0:
+            flash(f"User account with ID {profile_id} not found", 'error')
+        elif result == 1:
+            flash("Profile name already in use", 'error')
+        elif result == 2:
+            flash("User account updated successfully", 'success')
             return redirect(url_for('view_user_profile', profile_id=profile_id))
-        else:
-            flash(message, 'error')
+            
     
     # Get profile details
     result, profile = viewUserProfileCtrl.viewProfile(profile_id)
