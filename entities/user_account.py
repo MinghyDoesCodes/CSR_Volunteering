@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from database.db_config import Base
 import bcrypt
@@ -68,6 +69,72 @@ class UserAccount(Base):
         if excludeID:
             query = query.filter(UserAccount.id != excludeID)
         return session.query(query.exists()).scalar()
+    
+    def createUserAccount(session, email, userName, firstName, lastName,
+                          phoneNumber, userProfileID, password):
+        """
+        Create a new user account.
+
+        Return codes:
+          1 -> Email already in use
+          2 -> Username already in use
+          3 -> Invalid or inactive user profile
+          4 -> Success
+        """
+        # Normalize
+        email_norm = (email or "").strip().lower()
+        username_norm = (userName or "").strip()
+
+        # Duplicates
+        if UserAccount.checkEmailExists(session, email_norm):
+            return 1
+        if UserAccount.checkUsernameExists(session, username_norm):
+            return 2
+
+        # Profile must be active
+        profile = session.query(UserProfile).filter_by(
+            id=userProfileID, is_active=True
+        ).first()
+        if not profile:
+            return 3
+
+        if not password:
+            raise ValueError("Password is required to create an account.")
+
+        pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+        user = UserAccount(
+            username=username_norm,
+            email=email_norm,
+            password_hash=pw_hash,
+            first_name=(firstName or "").strip(),
+            last_name=(lastName or "").strip(),
+            phone_number=(phoneNumber or "").strip() if phoneNumber else None,
+            user_profile_id=profile.id,
+            is_active=True,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        session.add(user)
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            # Race-safe re-check
+            if UserAccount.checkEmailExists(session, email_norm):
+                return 1
+            if UserAccount.checkUsernameExists(session, username_norm):
+                return 2
+            raise
+
+        return 4  # Success
+
+    def viewUserAccount(session, userID: int):
+        """
+        Return a safe DTO (via to_dict) or None if not found.
+        """
+        user = UserAccount.findById(session, userID)
+        return user.to_dict() if user else None
     
     def updateAccount(self, session, email, userName, firstName, lastName, phoneNumber, userProfileID):
         if UserAccount.checkEmailExists(session, email, excludeID = self.id):
