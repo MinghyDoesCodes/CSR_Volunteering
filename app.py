@@ -17,6 +17,7 @@ from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
 from controllers.updateUserProfileCtrl import UpdateUserProfileCtrl
 from controllers.suspendUserProfileCtrl import SuspendUserProfileCtrl
 from controllers.searchUserAccountController import SearchUserAccountController
+from controllers.searchUserProfileController import SearchUserProfileController
 
 import os
 
@@ -37,6 +38,7 @@ viewUserProfileCtrl = ViewUserProfileCtrl()
 updateUserProfileCtrl = UpdateUserProfileCtrl()
 suspendUserProfileCtrl = SuspendUserProfileCtrl()
 searchUserAccountController = SearchUserAccountController()
+searchUserProfileController = SearchUserProfileController()
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -378,7 +380,7 @@ def search_user_profiles():
         is_active = False
     
     # Search
-    success, message, profiles = profile_controller.search_user_profiles(
+    success, message, profiles = searchUserProfileController.searchUserProfile(
         keyword if keyword else None,
         is_active
     )
