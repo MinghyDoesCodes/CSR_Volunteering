@@ -9,6 +9,7 @@ from controllers.user_account_controller import UserAccountController
 from controllers.user_profile_controller import UserProfileController
 from controllers.createUserProfileCtrl import CreateUserProfileCtrl
 from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
+from controllers.searchUserAccountController import SearchUserAccountController
 
 
 class UserAdminBoundary:
@@ -25,6 +26,7 @@ class UserAdminBoundary:
         self.profile_controller = UserProfileController()
         self.create_profile_ctrl = CreateUserProfileCtrl()
         self.view_profile_ctrl = ViewUserProfileCtrl()
+        self.search_ua_controller = SearchUserAccountController()
     
     def display_menu(self):
         """Display the main menu for User Admin"""
@@ -291,7 +293,7 @@ class UserAdminBoundary:
             is_active = None
         
         # Search
-        success, message, users = self.account_controller.search_user_accounts(
+        success, message, users = self.search_ua_controller.searchUserAccount(
             keyword, profile_id, is_active
         )
         
