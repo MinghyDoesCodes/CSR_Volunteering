@@ -63,24 +63,16 @@ class UserAccount(Base):
             query = query.filter(UserAccount.id != excludeID)
         return session.query(query.exists()).scalar()
     
-    def chechkUsernameExists(session, username, excludeID=None):
+    def checkUsernameExists(session, username, excludeID=None):
         """Check if a username already exists in the database"""
         query = session.query(UserAccount).filter(UserAccount.username == username)
         if excludeID:
             query = query.filter(UserAccount.id != excludeID)
         return session.query(query.exists()).scalar()
     
-    def createUserAccount(session, email, userName, firstName, lastName,
-                          phoneNumber, userProfileID, password):
-        """
-        Create a new user account.
-
-        Return codes:
-          1 -> Email already in use
-          2 -> Username already in use
-          3 -> Invalid or inactive user profile
-          4 -> Success
-        """
+    def createAccount(session, email, userName, firstName, lastName,
+                    phoneNumber, userProfileID, password):
+        
         # Normalize
         email_norm = (email or "").strip().lower()
         username_norm = (userName or "").strip()
@@ -128,19 +120,17 @@ class UserAccount(Base):
             raise
 
         return 4  # Success
-
-    def viewUserAccount(session, userID: int):
-        """
-        Return a safe DTO (via to_dict) or None if not found.
-        """
-        user = UserAccount.findById(session, userID)
-        return user.to_dict() if user else None
     
     def updateAccount(self, session, email, userName, firstName, lastName, phoneNumber, userProfileID):
+
+        # Normalize
+        email = (email or "").strip().lower()
+        userName = (userName or "").strip()
+
         if UserAccount.checkEmailExists(session, email, excludeID = self.id):
             return 1  # Email already in use
         
-        if UserAccount.chechkUsernameExists(session, userName, excludeID = self.id):
+        if UserAccount.checkUsernameExists(session, userName, excludeID = self.id):
             return 2  # Username already in use
 
         profile = session.query(UserProfile).filter_by(

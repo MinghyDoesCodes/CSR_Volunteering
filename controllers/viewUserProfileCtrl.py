@@ -6,15 +6,7 @@ class ViewUserProfileCtrl:
         self.session = get_session()
 
     def viewProfile(self, profileID):
-        
-        try:
-            profile = UP.findById(self.session, profileID)
-            
-            if not profile:
-                return (0, None)  # Not found
-            
-            return (1, profile)  # Success
-            
-        except Exception as e:
-            return (0, None)  # Error
-
+        profile = UP.findById(self.session, profileID)
+        if not profile:
+            return None # Not found
+        return profile

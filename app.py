@@ -8,11 +8,15 @@ from database.db_config import init_database, get_session
 from controllers.authentication_controller import AuthenticationController
 from controllers.user_account_controller import UserAccountController
 from controllers.user_profile_controller import UserProfileController
+from controllers.createUserAccountCtrl import CreateUserAccountCtrl
+from controllers.viewUserAccountCtrl import ViewUserAccountCtrl
 from controllers.updateUserAccountCtrl import UpdateUserAccountCtrl
 from controllers.suspendUserAccountCtrl import SuspendUserAccountCtrl
 from controllers.createUserProfileCtrl import CreateUserProfileCtrl
-from controllers.updateUserProfileCtrl import updateUserProfileCtrl
 from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
+from controllers.updateUserProfileCtrl import UpdateUserProfileCtrl
+from controllers.suspendUserProfileCtrl import SuspendUserProfileCtrl
+
 import os
 
 # Initialize Flask app
@@ -23,11 +27,14 @@ app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in
 auth_controller = AuthenticationController()
 account_controller = UserAccountController()
 profile_controller = UserProfileController()
+createUserAccountCtrl = CreateUserAccountCtrl()
+viewUserAccountCtrl = ViewUserAccountCtrl()
 updateUserAccountCtrl = UpdateUserAccountCtrl()
 suspendUserAccountCtrl = SuspendUserAccountCtrl()
 createUserProfileCtrl = CreateUserProfileCtrl()
 viewUserProfileCtrl = ViewUserProfileCtrl()
-
+updateUserProfileCtrl = UpdateUserProfileCtrl()
+suspendUserProfileCtrl = SuspendUserProfileCtrl()
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -41,7 +48,6 @@ def require_login(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
-
 
 def require_user_admin(f):
     """Decorator to require User Admin role"""
@@ -57,7 +63,6 @@ def require_user_admin(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
 # ==================== PUBLIC ROUTES ====================
 
 @app.route('/')
@@ -66,7 +71,6 @@ def index():
     if auth_controller.is_logged_in():
         return redirect(url_for('dashboard'))
     return render_template('index.html')
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -91,7 +95,6 @@ def login():
     
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
     username = session.get('username', 'Unknown')
@@ -99,7 +102,6 @@ def logout():
     session.clear()
     flash(f"{username} logged out successfully ", 'success')
     return redirect(url_for('index'))
-
 
 # ==================== DASHBOARD ====================
 
@@ -110,7 +112,6 @@ def dashboard():
     user = auth_controller.get_current_user()
     return render_template('dashboard.html', user=user)
 
-
 # ==================== USER ACCOUNT MANAGEMENT ====================
 
 @app.route('/user-accounts')
@@ -120,48 +121,49 @@ def list_user_accounts():
     users = account_controller.get_all_user_accounts()
     return render_template('user_accounts/list.html', users=users)
 
-
 @app.route('/user-accounts/create', methods=['GET', 'POST'])
 @require_user_admin
 def create_user_account():
     """Create a new user account"""
     if request.method == 'POST':
-        username = request.form.get('username')
         email = request.form.get('email')
-        password = request.form.get('password')
+        username = request.form.get('username')
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         phone_number = request.form.get('phone_number')
         user_profile_id = request.form.get('user_profile_id')
+        password = request.form.get('password')
         
-        success, message, user = account_controller.create_user_account(
-            username, email, password, first_name, last_name,
-            int(user_profile_id), phone_number if phone_number else None
+        result = createUserAccountCtrl.createAccount(
+            email, username, first_name, last_name, 
+            phone_number if phone_number else None,
+            int(user_profile_id), password
         )
         
-        if success:
-            flash(message, 'success')
+        if result == 1:
+            flash("Email already in use", 'error')
+        elif result == 2:
+            flash("Username already in use", 'error')
+        elif result == 3:
+            flash("Invalid or inactive user profile selected", 'error')
+        elif result == 4:
+            flash("User account created successfully", 'success')
             return redirect(url_for('list_user_accounts'))
-        else:
-            flash(message, 'error')
     
     # Get active profiles for dropdown
     profiles = profile_controller.get_active_user_profiles()
     return render_template('user_accounts/create.html', profiles=profiles)
 
-
 @app.route('/user-accounts/<int:user_id>')
 @require_user_admin
 def view_user_account(user_id):
     """View user account details"""
-    success, message, user = account_controller.view_user_account(user_id)
-    
-    if not success:
-        flash(message, 'error')
+    user = viewUserAccountCtrl.viewAccount(user_id)
+    if not user:  # Not found
+        flash(f"User account with ID {user_id} not found", 'error')
         return redirect(url_for('list_user_accounts'))
-    
-    return render_template('user_accounts/view.html', user=user)
-
+        
+    return render_template('user_accounts/view.html', user = user)
 
 @app.route('/user-accounts/<int:user_id>/edit', methods=['GET', 'POST'])
 @require_user_admin
@@ -197,9 +199,10 @@ def updateUserAccount(user_id):
             return redirect(url_for('view_user_account', user_id=user_id))
     
     # Get user details
-    success, message, user = account_controller.view_user_account(user_id)
-    if not success:
-        flash(message, 'error')
+    user = viewUserAccountCtrl.viewAccount(user_id)
+    
+    if not user:  # Not found
+        flash(f"User account with ID {user_id} not found", 'error')
         return redirect(url_for('list_user_accounts'))
     
     # Get profiles for dropdown
@@ -264,7 +267,6 @@ def search_user_accounts():
                          selected_profile=profile_id,
                          selected_status=status)
 
-
 # ==================== USER PROFILE MANAGEMENT ====================
 
 @app.route('/user-profiles')
@@ -273,7 +275,6 @@ def list_user_profiles():
     """List all user profiles"""
     profiles = profile_controller.get_all_user_profiles()
     return render_template('user_profiles/list.html', profiles=profiles)
-
 
 @app.route('/user-profiles/create', methods=['GET', 'POST'])
 @require_user_admin
@@ -297,19 +298,16 @@ def create_user_profile():
     
     return render_template('user_profiles/create.html')
 
-
 @app.route('/user-profiles/<int:profile_id>')
 @require_user_admin
 def view_user_profile(profile_id):
     """View user profile details"""
-    result, profile = viewUserProfileCtrl.viewProfile(profile_id)
-    
-    if result == 0:  # Not found or error
+    profile = viewUserProfileCtrl.viewProfile(profile_id)
+    if not profile:  # Not found
         flash(f"User profile with ID {profile_id} not found", 'error')
         return redirect(url_for('list_user_profiles'))
     
-    return render_template('user_profiles/view.html', profile=profile)
-
+    return render_template('user_profiles/view.html', profile = profile)
 
 @app.route('/user-profiles/<int:profile_id>/edit', methods=['GET', 'POST'])
 @require_user_admin
@@ -319,47 +317,49 @@ def edit_user_profile(profile_id):
         profile_name = request.form.get('profile_name')
         description = request.form.get('description')
         
-        result = updateUserProfileCtrl().updateProfile(
+        result = updateUserProfileCtrl.updateProfile(
             profile_id= profile_id,
             profile_name=profile_name if profile_name else None,
             description=description if description else None
         )
         
         if result == 0:
-            flash(f"User account with ID {profile_id} not found", 'error')
+            flash(f"User profile with ID {profile_id} not found", 'error')
         elif result == 1:
             flash("Profile name already in use", 'error')
         elif result == 2:
-            flash("User account updated successfully", 'success')
+            flash("User profile updated successfully", 'success')
             return redirect(url_for('view_user_profile', profile_id=profile_id))
             
-    
     # Get profile details
-    result, profile = viewUserProfileCtrl.viewProfile(profile_id)
-    if result == 0:  # Not found or error
+    profile = viewUserProfileCtrl.viewProfile(profile_id)
+    if not profile:  # Not found
         flash(f"User profile with ID {profile_id} not found", 'error')
         return redirect(url_for('list_user_profiles'))
     
     return render_template('user_profiles/edit.html', profile=profile)
 
-
 @app.route('/user-profiles/<int:profile_id>/suspend', methods=['POST'])
 @require_user_admin
 def suspend_user_profile(profile_id):
     """Suspend user profile"""
-    success, message = profile_controller.suspend_user_profile(profile_id)
-    flash(message, 'success' if success else 'error')
+    result = suspendUserProfileCtrl.suspendProfile(profileID=profile_id)
+    if result == False:
+        flash(f"User profile with ID {profile_id} not found or is already suspended", 'error')
+    
+    flash("User profile suspended successfully", 'success')
     return redirect(url_for('view_user_profile', profile_id=profile_id))
-
 
 @app.route('/user-profiles/<int:profile_id>/activate', methods=['POST'])
 @require_user_admin
 def activate_user_profile(profile_id):
     """Activate user profile"""
-    success, message = profile_controller.activate_user_profile(profile_id)
-    flash(message, 'success' if success else 'error')
+    result = suspendUserProfileCtrl.activateProfile(profileID=profile_id)
+    if result == False:
+        flash(f"User profile with ID {profile_id} not found or is already active", 'error')
+    
+    flash("User profile activated successfully", 'success')
     return redirect(url_for('view_user_profile', profile_id=profile_id))
-
 
 @app.route('/user-profiles/search')
 @require_user_admin

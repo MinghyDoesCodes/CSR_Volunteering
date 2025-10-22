@@ -1,26 +1,26 @@
 from entities.user_account import UserProfile as UP
 from database.db_config import get_session
 
-class SuspendUserAccountCtrl:
+class SuspendUserProfileCtrl:
     def __init__(self):
         self.session = get_session()
 
-    def suspendProfile(self, userID):
+    def suspendProfile(self, profileID):
 
-        user = UP.findById(self.session, userID)
-        if not user:
+        profile = UP.findById(self.session, profileID)
+        if not profile:
             return False # Profile not found
         
-        result = user.suspendUser(self.session)
+        result = profile.suspendProfile(self.session)
 
         return result # True if suspended, False if already suspended
         
-    def activateProfile(self, userID):
+    def activateProfile(self, profileID):
     
-        user = UP.findById(self.session, userID)
-        if not user:
+        profile = UP.findById(self.session, profileID)
+        if not profile:
             return False # Profile not found
         
-        result = user.activate(self.session)
+        result = profile.activateProfile(self.session)
 
         return result # True if activated, False if already active
