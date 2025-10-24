@@ -483,6 +483,7 @@ def deleteRequest(request_id):
         flash(f"Request with ID {request_id} not found", 'error')
     elif result == 1:
         flash("Cannot delete a completed request", 'error')
+        return redirect(url_for('listRequests'))
     elif result == 2:
         flash("Request deleted successfully", 'success')
         return redirect(url_for('listRequests'))

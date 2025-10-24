@@ -29,7 +29,7 @@
             <label for="request_status">Status <span class="required">*</span></label>
             <select id="request_status" name="request_status" class="form-control" required>
                 <option value="Pending" {% if request.status == "Pending" %}selected{% endif %}>Pending</option>
-                <option value="Completed" {% if request.status == "Approved" %}selected{% endif %}>Approved</option>
+                <option value="Completed" {% if request.status == "Approved" %}selected{% endif %}>Completed</option>
             </select>
         </div>
 
