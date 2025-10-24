@@ -16,6 +16,8 @@ from controllers.createUserProfileCtrl import CreateUserProfileCtrl
 from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
 from controllers.updateUserProfileCtrl import UpdateUserProfileCtrl
 from controllers.suspendUserProfileCtrl import SuspendUserProfileCtrl
+from controllers.searchUserAccountController import SearchUserAccountController
+from controllers.searchUserProfileController import SearchUserProfileController
 from controllers.createRequestCtrl import CreateRequestCtrl
 from controllers.viewRequestCtrl import ViewRequestCtrl
 from controllers.updateRequestCtrl import UpdateRequestCtrl
@@ -40,6 +42,8 @@ createUserProfileCtrl = CreateUserProfileCtrl()
 viewUserProfileCtrl = ViewUserProfileCtrl()
 updateUserProfileCtrl = UpdateUserProfileCtrl()
 suspendUserProfileCtrl = SuspendUserProfileCtrl()
+searchUserAccountController = SearchUserAccountController()
+searchUserProfileController = SearchUserProfileController()
 createRequestCtrl = CreateRequestCtrl()
 viewRequestCtrl = ViewRequestCtrl()
 updateRequestCtrl = UpdateRequestCtrl()
@@ -262,7 +266,7 @@ def search_user_accounts():
         is_active = False
     
     # Search
-    success, message, users = account_controller.search_user_accounts(
+    success, message, users = searchUserAccountController.searchUserAccount(
         keyword if keyword else None,
         profile_id,
         is_active
@@ -387,7 +391,7 @@ def search_user_profiles():
         is_active = False
     
     # Search
-    success, message, profiles = profile_controller.search_user_profiles(
+    success, message, profiles = searchUserProfileController.searchUserProfile(
         keyword if keyword else None,
         is_active
     )
