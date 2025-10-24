@@ -10,3 +10,6 @@ class ViewUserAccountCtrl:
         if not user:
             return None  # Not found
         return user
+    
+    def listAccounts(self):
+        return UA.getAllAccounts(self.session)

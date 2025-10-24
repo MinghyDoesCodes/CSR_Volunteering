@@ -16,6 +16,11 @@ from controllers.createUserProfileCtrl import CreateUserProfileCtrl
 from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
 from controllers.updateUserProfileCtrl import UpdateUserProfileCtrl
 from controllers.suspendUserProfileCtrl import SuspendUserProfileCtrl
+from controllers.createRequestCtrl import CreateRequestCtrl
+from controllers.viewRequestCtrl import ViewRequestCtrl
+from controllers.updateRequestCtrl import UpdateRequestCtrl
+from controllers.deleteRequestCtrl import DeleteRequestCtrl
+from controllers.searchRequestCtrl import SearchRequestCtrl
 
 import os
 
@@ -35,6 +40,12 @@ createUserProfileCtrl = CreateUserProfileCtrl()
 viewUserProfileCtrl = ViewUserProfileCtrl()
 updateUserProfileCtrl = UpdateUserProfileCtrl()
 suspendUserProfileCtrl = SuspendUserProfileCtrl()
+createRequestCtrl = CreateRequestCtrl()
+viewRequestCtrl = ViewRequestCtrl()
+updateRequestCtrl = UpdateRequestCtrl()
+deleteRequestCtrl = DeleteRequestCtrl()
+searchRequestCtrl = SearchRequestCtrl()
+
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -118,7 +129,7 @@ def dashboard():
 @require_user_admin
 def list_user_accounts():
     """List all user accounts"""
-    users = account_controller.get_all_user_accounts()
+    users = viewUserAccountCtrl.listAccounts()
     return render_template('user_accounts/list.html', users=users)
 
 @app.route('/user-accounts/create', methods=['GET', 'POST'])
@@ -386,6 +397,105 @@ def search_user_profiles():
                          keyword=keyword,
                          selected_status=status)
 
+# ==================== REQUEST MANAGEMENT ====================
+
+@app.route('/requests')
+@require_login
+def listRequests():
+    """List all request"""
+    requests = viewRequestCtrl.listRequests()
+    return render_template('requests/list.html', requests=requests)
+
+@app.route('/requests/create', methods=['GET', 'POST'])
+@require_login
+def createRequest():
+    """Create a new request"""
+    if request.method == 'POST':
+        user_account_id = auth_controller.get_current_user().id
+        title = request.form.get('request_title')
+        description = request.form.get('request_description')
+        
+        result = createRequestCtrl.createRequest(
+            userAccountID=user_account_id,
+            title=title,
+            description=description
+        )
+        
+        if result == 0:
+            flash("User does not exist", 'error')
+        elif result == 1:
+            flash("Request created successfully", 'success')
+            return redirect(url_for('listRequests'))
+    
+    return render_template('requests/create.html')
+
+@app.route('/requests/<int:request_id>')
+@require_login
+def viewRequest(request_id):
+    """View request details"""
+    request = viewRequestCtrl.viewRequest(request_id)
+    if not request:  # Not found
+        flash(f"Request with ID {request_id} not found", 'error')
+        return redirect(url_for('listRequests'))
+    
+    return render_template('requests/view.html', request = request)
+
+@app.route('/requests/<int:request_id>/edit', methods=['GET', 'POST'])
+@require_login
+def updateRequest(request_id):
+    """Update request details"""
+    if request.method == 'POST':
+        title = request.form.get('request_title')
+        description = request.form.get('request_description')
+        status = request.form.get('request_status')
+        
+        result = updateRequestCtrl.updateRequest(
+            requestID=request_id,
+            title=title if title else None,
+            description=description if description else None,
+            status=status if status else None
+        )
+        
+        if result == 0:
+            flash(f"Request with ID {request_id} not found", 'error')
+        elif result == 1:
+            flash("Request updated successfully", 'success')
+            return redirect(url_for('viewRequest', request_id=request_id))
+    
+    # Get request details
+    request_obj = viewRequestCtrl.viewRequest(request_id)
+    if not request_obj:  # Not found
+        flash(f"Request with ID {request_id} not found", 'error')
+        return redirect(url_for('listRequests'))
+    
+    return render_template('requests/edit.html', request=request_obj)
+
+@app.route('/requests/<int:request_id>/delete', methods=['POST'])
+@require_login
+def deleteRequest(request_id):
+    """Delete a request"""
+    result = deleteRequestCtrl.deleteRequest(requestID=request_id)
+    if result == 0:
+        flash(f"Request with ID {request_id} not found", 'error')
+    elif result == 1:
+        flash("Cannot delete a completed request", 'error')
+    elif result == 2:
+        flash("Request deleted successfully", 'success')
+        return redirect(url_for('listRequests'))
+    
+@app.route('/requests/search')
+@require_login
+def searchRequests():
+    """Search requests"""
+    keyword = request.args.get('keyword', '')
+    status = request.args.get('status', '')
+    
+    requests = searchRequestCtrl.searchRequests(keyword or None, status or None)
+    
+    return render_template('requests/search.html', 
+                         requests=requests,
+                         keyword=keyword,
+                         selected_status=status)
 
 # ==================== ERROR HANDLERS ====================
 

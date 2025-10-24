@@ -44,6 +44,7 @@ def init_database():
     # Import all entity models so they're registered with Base
     from entities.user_account import UserAccount
     from entities.user_profile import UserProfile
+    from entities.request import Request
     
     # Create all tables
     Base.metadata.create_all(bind=engine)

@@ -82,4 +82,3 @@ if __name__ == "__main__":
     print("\nSeeding initial data...")
     seed_initial_data()
     print("\nDatabase setup complete!")
-

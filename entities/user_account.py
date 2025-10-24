@@ -27,6 +27,9 @@ class UserAccount(Base):
     
     # Relationship to UserProfile (SQLAlchemy handles the JOIN automatically)
     user_profile = relationship("UserProfile")
+
+    # Relationship to Requests
+    requests = relationship("Request", back_populates="pin")
     
     # Account status
     is_active = Column(Boolean, default=True, nullable=False)
@@ -55,6 +58,10 @@ class UserAccount(Base):
     def findById(session, userID):
         """Fetch a user account by ID"""
         return session.query(UserAccount).filter_by(id=userID).first()
+    
+    def getAllAccounts(session):
+        """Fetch all user accounts"""
+        return session.query(UserAccount).all()
     
     def checkEmailExists(session, email, excludeID=None):
         """Check if an email already exists in the database"""
