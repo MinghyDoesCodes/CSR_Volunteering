@@ -16,6 +16,9 @@ class Request(Base):
     # Relationship to UserAccount
     pin = relationship("UserAccount", back_populates="requests")
     
+    # Relationship to Shortlists
+    shortlists = relationship("Shortlist", back_populates="request")
+    
     # Request details
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)

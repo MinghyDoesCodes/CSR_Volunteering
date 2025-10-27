@@ -75,5 +75,19 @@
     </div>
 
     {% endif %}
+
+    {% if user.user_profile.profile_name == 'CSR Rep' %}
+    <div class="dashboard-card">
+        <div class="card-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </div>
+        <h3>Browse Requests</h3>
+        <p>View and shortlist volunteer opportunities</p>
+        <a href="{{ url_for('listRequests') }}" class="btn btn-primary">View Requests</a>
+    </div>
+
+    {% endif %}
 </div>
 {% endblock %}

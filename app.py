@@ -23,6 +23,8 @@ from controllers.viewRequestCtrl import ViewRequestCtrl
 from controllers.updateRequestCtrl import UpdateRequestCtrl
 from controllers.deleteRequestCtrl import DeleteRequestCtrl
 from controllers.searchRequestCtrl import SearchRequestCtrl
+from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
+from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 
 import os
 
@@ -49,6 +51,8 @@ viewRequestCtrl = ViewRequestCtrl()
 updateRequestCtrl = UpdateRequestCtrl()
 deleteRequestCtrl = DeleteRequestCtrl()
 searchRequestCtrl = SearchRequestCtrl()
+viewShortlistCountCtrl = ViewShortlistCountCtrl()
+shortlistRequestCtrl = ShortlistRequestCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -408,7 +412,23 @@ def search_user_profiles():
 def listRequests():
     """List all request"""
     requests = viewRequestCtrl.listRequests()
-    return render_template('requests/list.html', requests=requests)
+    
+    # Get shortlist counts for PIN users
+    shortlist_counts = {}
+    csr_shortlisted = {}
+    current_user = auth_controller.get_current_user()
+    
+    if current_user and current_user.user_profile.profile_name == 'PIN':
+        shortlist_counts = viewShortlistCountCtrl.getShortlistCountsForUser(current_user.id)
+    elif current_user and current_user.user_profile.profile_name == 'CSR Rep':
+        # Get CSR Rep's shortlist status for each request
+        for req in requests:
+            csr_shortlisted[req.request_id] = shortlistRequestCtrl.isShortlisted(req.request_id, current_user.id)
+    
+    # Pass user profile for template logic
+    user_profile = current_user.user_profile.profile_name if current_user else None
+    
+    return render_template('requests/list.html', requests=requests, shortlist_counts=shortlist_counts, csr_shortlisted=csr_shortlisted, user_profile=user_profile)
 
 @app.route('/requests/create', methods=['GET', 'POST'])
 @require_login
@@ -437,12 +457,23 @@ def createRequest():
 @require_login
 def viewRequest(request_id):
     """View request details"""
-    request = viewRequestCtrl.viewRequest(request_id)
-    if not request:  # Not found
+    request_obj = viewRequestCtrl.viewRequest(request_id)
+    if not request_obj:  # Not found
         flash(f"Request with ID {request_id} not found", 'error')
         return redirect(url_for('listRequests'))
     
-    return render_template('requests/view.html', request = request)
+    # Check if current user is CSR Rep and has shortlisted this request
+    current_user = auth_controller.get_current_user()
+    is_shortlisted = False
+    shortlist_count = 0
+    
+    if current_user and current_user.user_profile.profile_name == 'CSR Rep':
+        is_shortlisted = shortlistRequestCtrl.isShortlisted(request_id, current_user.id)
+    elif current_user and current_user.user_profile.profile_name == 'PIN':
+        # Get shortlist count for PIN users
+        shortlist_count = viewShortlistCountCtrl.getShortlistCount(request_id)
+    
+    return render_template('requests/view.html', request=request_obj, current_user=current_user, is_shortlisted=is_shortlisted, shortlist_count=shortlist_count)
 
 @app.route('/requests/<int:request_id>/edit', methods=['GET', 'POST'])
 @require_login
@@ -501,6 +532,21 @@ def searchRequests():
                          requests=requests,
                          keyword=keyword,
                          selected_status=status)
+
+@app.route('/requests/<int:request_id>/shortlist', methods=['POST'])
+@require_login
+def shortlistRequest(request_id):
+    """Shortlist a request"""
+    current_user = auth_controller.get_current_user()
+    
+    success, message = shortlistRequestCtrl.shortlistRequest(request_id, current_user.id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
+    
+    return redirect(url_for('viewRequest', request_id=request_id))
 
 # ==================== ERROR HANDLERS ====================
 

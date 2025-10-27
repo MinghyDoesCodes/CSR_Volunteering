@@ -31,6 +31,9 @@ class UserAccount(Base):
     # Relationship to Requests
     requests = relationship("Request", back_populates="pin")
     
+    # Relationship to Shortlists (for CSR Reps who shortlist requests)
+    shortlists = relationship("Shortlist", back_populates="csr_rep")
+    
     # Account status
     is_active = Column(Boolean, default=True, nullable=False)
     
