@@ -34,6 +34,12 @@ class UserAccount(Base):
     # Relationship to Shortlists (for CSR Reps who shortlist requests)
     shortlists = relationship("Shortlist", back_populates="csr_rep")
     
+    # Relationship to Matches (as PIN)
+    matches_as_pin = relationship("Match", foreign_keys="Match.pin_id", back_populates="pin")
+    
+    # Relationship to Matches (as CSR Rep)
+    matches_as_csr = relationship("Match", foreign_keys="Match.csr_rep_id", back_populates="csr_rep")
+    
     # Account status
     is_active = Column(Boolean, default=True, nullable=False)
     

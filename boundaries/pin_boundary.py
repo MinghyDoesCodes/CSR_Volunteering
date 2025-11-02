@@ -11,6 +11,7 @@ from controllers.updateRequestCtrl import UpdateRequestCtrl
 from controllers.deleteRequestCtrl import DeleteRequestCtrl
 from controllers.searchRequestCtrl import SearchRequestCtrl
 from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
+from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 
 
 class PINBoundary:
@@ -29,6 +30,7 @@ class PINBoundary:
         self.delete_request_ctrl = DeleteRequestCtrl()
         self.search_request_ctrl = SearchRequestCtrl()
         self.view_shortlist_count_ctrl = ViewShortlistCountCtrl()
+        self.view_history_ctrl = ViewHistoryCtrl()
     
     def display_menu(self):
         """Display the main menu for PIN users"""
@@ -51,6 +53,7 @@ class PINBoundary:
         print("7.  Delete Request")
         print("8.  Search Requests")
         print("9.  View Shortlist Count")
+        print("10. View Completed Match History")
         
         print("\n--- OTHER ---")
         print("0.  Exit")
@@ -80,6 +83,8 @@ class PINBoundary:
                 self.handle_search_requests()
             elif choice == "9":
                 self.handle_view_shortlist_count()
+            elif choice == "10":
+                self.handle_view_completed_history()
             elif choice == "0":
                 print("\nThank you for using CSR Volunteering System!")
                 break
@@ -293,6 +298,149 @@ class PINBoundary:
         
         count = self.view_shortlist_count_ctrl.getShortlistCount(request_id)
         print(f"\nShortlist count: {count} time{'s' if count != 1 else ''}")
+    
+    def onClickHistory(self, page: int = 1, current_user=None):
+        """
+        Entry point for viewing completed history
+        Matches BCE diagram: onClickHistory()
+        Can be called from web interface or CLI
+        
+        Args:
+            page (int): Page number to display
+            current_user: Optional user object (for web interface)
+            
+        Returns:
+            tuple: (items, total_count, page_meta) on success
+            None: On error (will trigger appropriate error handling)
+        """
+        # For web interface, user is passed in; for CLI, get from auth_controller
+        if current_user:
+            user = current_user
+        elif not self.auth_controller.is_logged_in():
+            return None
+        else:
+            user = self.auth_controller.get_current_user()
+        
+        # Validate user is PIN
+        if not user or user.user_profile.profile_name != 'PIN':
+            return None
+        
+        try:
+            # Call controller - matches BCE/Sequence diagram
+            items, total_count, page_meta = self.view_history_ctrl.viewHistory(
+                pinID=user.id,
+                page=page
+            )
+            return items, total_count, page_meta, user
+        except AuthError as e:
+            # Error handling: return None for web, print for CLI
+            if current_user is None:  # CLI mode
+                print("\n" + "="*60)
+                print("✗ AUTHORIZATION ERROR")
+                print(f"  {str(e)}")
+                print("="*60)
+            return None
+        except Exception as e:
+            # Error handling: return None for web, print for CLI
+            if current_user is None:  # CLI mode
+                print(f"\n✗ Error: {str(e)}")
+            return None
+    
+    def renderList(self, items, total_count, page_meta, current_user=None):
+        """
+        Prepare data for rendering the list
+        Matches BCE diagram: renderList(items, totalCount, pageMeta)
+        
+        For web interface: Returns dict for template rendering
+        For CLI: Use render_list() method instead
+        """
+        # This returns data structure for template rendering
+        # Handles empty state implicitly (template checks total_count == 0)
+        return {
+            'items': items,
+            'total_count': total_count,
+            'page_meta': page_meta,
+            'current_user': current_user
+        }
+    
+    def handle_view_completed_history(self):
+        """Handle viewing completed match history (CLI entry point)"""
+        print("\n--- VIEW COMPLETED MATCH HISTORY ---")
+        
+        if not self.auth_controller.is_logged_in():
+            print("\n✗ Please login first")
+            return
+        
+        # Get page number
+        try:
+            page_input = input("Page number (Enter for page 1): ").strip()
+            page = int(page_input) if page_input else 1
+        except ValueError:
+            print("\n✗ Invalid page number, using page 1")
+            page = 1
+        
+        # Call onClickHistory which matches BCE diagram
+        result = self.onClickHistory(page)
+        
+        if result:
+            items, total_count, page_meta, user = result
+            
+            # Empty state is handled in render_list() method
+            if total_count > 0:
+                print(f"\n✓ Found {total_count} completed match(es)")
+            self.render_list(items, total_count, page_meta)
+    
+    def render_list(self, items, total_count, page_meta):
+        """
+        Render list of completed matches (CLI display)
+        This is the CLI version of renderList()
+        """
+        print("\n" + "="*100)
+        print(f"Page {page_meta['page']} of {page_meta['totalPages']} | Total: {total_count} completed match(es)")
+        print("="*100)
+        
+        if total_count == 0:
+            # Empty state handled here for CLI
+            print("No completed matches found.")
+            print("You haven't received any completed assistance yet.")
+            print("="*100)
+            return
+        
+        print(f"{'Match ID':<10} {'Request Title':<30} {'Service Type':<20} {'Volunteer':<20} {'Completed At':<20}")
+        print("-"*100)
+        
+        for item in items:
+            match_id = item.match_id
+            title = ""
+            if item.request:
+                title = item.request.title[:27] + "..." if len(item.request.title) > 30 else item.request.title
+            else:
+                title = "Request not found"
+            
+            service_type = item.service_type or "N/A"
+            volunteer = ""
+            if item.csr_rep:
+                volunteer = f"{item.csr_rep.first_name} {item.csr_rep.last_name}"
+            else:
+                volunteer = "Unknown"
+            
+            completed = ""
+            if item.completed_at:
+                completed = item.completed_at.strftime('%Y-%m-%d %H:%M')
+            else:
+                completed = item.created_at.strftime('%Y-%m-%d %H:%M')
+            
+            print(f"{match_id:<10} {title:<30} {service_type:<20} {volunteer:<20} {completed:<20}")
+        
+        print("-"*100)
+        
+        # Pagination info
+        if page_meta['hasPrev'] or page_meta['hasNext']:
+            print("\nPagination:")
+            if page_meta['hasPrev']:
+                print(f"  Previous page: {page_meta['page'] - 1}")
+            if page_meta['hasNext']:
+                print(f"  Next page: {page_meta['page'] + 1}")
     
     # ==================== DISPLAY HELPERS ====================
     

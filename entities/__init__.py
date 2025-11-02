@@ -4,3 +4,4 @@ from .user_profile import UserProfile
 from .user_account import UserAccount
 from .request import Request
 from .shortlist import Shortlist
+from .match import Match

@@ -19,6 +19,9 @@ class Request(Base):
     # Relationship to Shortlists
     shortlists = relationship("Shortlist", back_populates="request")
     
+    # Relationship to Matches
+    matches = relationship("Match", back_populates="request")
+    
     # Request details
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)

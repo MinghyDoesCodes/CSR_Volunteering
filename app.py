@@ -25,6 +25,8 @@ from controllers.deleteRequestCtrl import DeleteRequestCtrl
 from controllers.searchRequestCtrl import SearchRequestCtrl
 from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
 from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
+from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
+from boundaries.pin_boundary import PINBoundary
 
 import os
 
@@ -53,6 +55,8 @@ deleteRequestCtrl = DeleteRequestCtrl()
 searchRequestCtrl = SearchRequestCtrl()
 viewShortlistCountCtrl = ViewShortlistCountCtrl()
 shortlistRequestCtrl = ShortlistRequestCtrl()
+viewHistoryCtrl = ViewHistoryCtrl()
+pin_boundary = PINBoundary()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -547,6 +551,38 @@ def shortlistRequest(request_id):
         flash(message, 'error')
     
     return redirect(url_for('viewRequest', request_id=request_id))
+
+# ==================== COMPLETED MATCH HISTORY ====================
+
+@app.route('/completed-history')
+@require_login
+def viewCompletedHistory():
+    """View completed match history for PIN users - Using Boundary Pattern"""
+    current_user = auth_controller.get_current_user()
+    
+    # Check if user is PIN
+    if not current_user or current_user.user_profile.profile_name != 'PIN':
+        flash('Only PIN users can view completed match history', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get page number from query parameter
+    page = request.args.get('page', 1, type=int)
+    
+    # Call Boundary method (matches BCE diagram: onClickHistory())
+    result = pin_boundary.onClickHistory(page=page, current_user=current_user)
+    
+    if result is None:
+        # Boundary handles errors internally; show generic error
+        flash('Unable to load completed history. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    items, total_count, page_meta, user = result
+    
+    # Boundary prepares data for rendering (matches BCE: renderList())
+    render_data = pin_boundary.renderList(items, total_count, page_meta, user)
+    
+    # Route passes data to template
+    return render_template('completed_history/list.html', **render_data)
 
 # ==================== ERROR HANDLERS ====================
 
