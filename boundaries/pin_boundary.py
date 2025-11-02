@@ -11,6 +11,7 @@ from controllers.updateRequestCtrl import UpdateRequestCtrl
 from controllers.deleteRequestCtrl import DeleteRequestCtrl
 from controllers.searchRequestCtrl import SearchRequestCtrl
 from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
+from controllers.requestViewCountCtrl import RequestViewCountCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 
 
@@ -31,6 +32,7 @@ class PINBoundary:
         self.search_request_ctrl = SearchRequestCtrl()
         self.view_shortlist_count_ctrl = ViewShortlistCountCtrl()
         self.view_history_ctrl = ViewHistoryCtrl()
+        self.view_request_count_ctrl = RequestViewCountCtrl()
     
     def display_menu(self):
         """Display the main menu for PIN users"""
@@ -298,6 +300,23 @@ class PINBoundary:
         
         count = self.view_shortlist_count_ctrl.getShortlistCount(request_id)
         print(f"\nShortlist count: {count} time{'s' if count != 1 else ''}")
+
+    def handle_view_request_count(self):
+        """Handle viewing request count"""
+        print("\n--- VIEW REQUEST COUNT ---")
+        
+        if not self.auth_controller.is_logged_in():
+            print("\n✗ Please login first")
+            return
+        
+        try:
+            request_id = int(input("Enter Request ID: ").strip())
+        except ValueError:
+            print("\n✗ Invalid ID")
+            return
+        
+        count = self.view_request_count_ctrl.requestViewCount(request_id)
+        print(f"\nRequest View count: {count} time{'s' if count != 1 else ''}")
     
     def onClickHistory(self, page: int = 1, current_user=None):
         """
@@ -451,6 +470,7 @@ class PINBoundary:
         print(f"Title:           {request.title}")
         print(f"Description:     {request.description}")
         print(f"Status:          {request.status}")
+        print(f"View Count: {request.view_count} times")
         print(f"Created At:      {request.created_at}")
         print(f"Updated At:      {request.updated_at}")
         print("-"*60)

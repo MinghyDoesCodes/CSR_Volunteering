@@ -27,6 +27,7 @@ from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
 from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
+from controllers.requestViewCountCtrl import RequestViewCountCtrl
 
 import os
 
@@ -57,6 +58,7 @@ viewShortlistCountCtrl = ViewShortlistCountCtrl()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 viewHistoryCtrl = ViewHistoryCtrl()
 pin_boundary = PINBoundary()
+requestViewCountCtrl = RequestViewCountCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -461,8 +463,8 @@ def createRequest():
 @require_login
 def viewRequest(request_id):
     """View request details"""
-    request_obj = viewRequestCtrl.viewRequest(request_id)
-    if not request_obj:  # Not found
+    updated_request = requestViewCountCtrl.requestViewCount(request_id)
+    if not updated_request:  # Not found
         flash(f"Request with ID {request_id} not found", 'error')
         return redirect(url_for('listRequests'))
     
@@ -477,7 +479,7 @@ def viewRequest(request_id):
         # Get shortlist count for PIN users
         shortlist_count = viewShortlistCountCtrl.getShortlistCount(request_id)
     
-    return render_template('requests/view.html', request=request_obj, current_user=current_user, is_shortlisted=is_shortlisted, shortlist_count=shortlist_count)
+    return render_template('requests/view.html', request=updated_request, current_user=current_user, is_shortlisted=is_shortlisted, shortlist_count=shortlist_count)
 
 @app.route('/requests/<int:request_id>/edit', methods=['GET', 'POST'])
 @require_login

@@ -26,13 +26,16 @@ class Request(Base):
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)
     status = Column(String(50), default='Pending', nullable=False)
+
+    # View Counter
+    view_count = Column(Integer, default=0, nullable=False)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     def __repr__(self):
-        return f"<Request(id={self.request_id}, title='{self.title}', status='{self.status}')>"
+        return f"<Request(id={self.request_id}, title='{self.title}', status='{self.status}', views={self.view_count})>"
     
     def findById(session, request_id):
         """Find a request by its ID"""
@@ -41,6 +44,11 @@ class Request(Base):
     def getAllRequests(session):
         """Get all requests"""
         return session.query(Request).all()
+    
+    def increment_view(self, session):
+        """Increment and persist view count"""
+        self.view_count +=  1
+        session.commit()
     
     def createRequest(session, user_account_id, title, description):
 
