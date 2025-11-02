@@ -9,6 +9,7 @@ class ViewRequestCtrl:
         request = Request.findById(self.session, requestID)
         if not request:
             return None  # Not found
+        request.increment_view(self.session)
         return request
     
     def listRequests(self):
