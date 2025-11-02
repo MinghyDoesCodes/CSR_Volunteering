@@ -37,6 +37,7 @@
                 <th>ID</th>
                 <th>Title</th>
                 <th>Requested By</th>
+                <th>View Count</th>
                 <th>Status</th>
                 {% if shortlist_counts is defined %}
                 <th>Shortlisted</th>
@@ -58,6 +59,7 @@
                             Unknown
                         {% endif %}
                     </td>
+                    <td>{{ request.view_count }}</td>
                     <td>
                         {% if request.status == "Pending" %}
                             <span class="badge badge-warning">Pending</span>

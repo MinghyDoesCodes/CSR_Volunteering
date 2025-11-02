@@ -451,6 +451,7 @@ class PINBoundary:
         print(f"Title:           {request.title}")
         print(f"Description:     {request.description}")
         print(f"Status:          {request.status}")
+        print(f"View Count: {request.view_count} times")
         print(f"Created At:      {request.created_at}")
         print(f"Updated At:      {request.updated_at}")
         print("-"*60)
