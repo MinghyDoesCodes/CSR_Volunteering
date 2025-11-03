@@ -28,6 +28,8 @@ from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
 from controllers.requestViewCountCtrl import RequestViewCountCtrl
+from controllers.completedHistoryCtrl import CompletedHistoryCtrl, ValidationError
+from entities.match import Match
 
 import os
 
@@ -585,6 +587,47 @@ def viewCompletedHistory():
     
     # Route passes data to template
     return render_template('completed_history/list.html', **render_data)
+
+@app.route('/completed-history/search')
+@require_login
+def searchCompletedHistory():
+    current_user = auth_controller.get_current_user()
+    if not current_user or current_user.user_profile.profile_name != 'PIN':
+        flash('Only PIN users can search completed history', 'error')
+        return redirect(url_for('dashboard'))
+
+    serviceType = request.args.get('serviceType') or None
+    fromDate    = request.args.get('from') or None
+    toDate      = request.args.get('to') or None
+    page        = request.args.get('page', 1, type=int)
+
+    result = pin_boundary.onSearchClick(
+        serviceType=serviceType,
+        fromDate=fromDate,
+        toDate=toDate,
+        page=page,
+        current_user=current_user,
+    )
+    if result is None:
+        # Boundary already shows inline/flash errors
+        return redirect(url_for('viewCompletedHistory'))
+
+    items, total_count, page_meta, user, filters = result
+
+    # build dropdown values
+    session_db = get_session()
+    from entities.match import Match
+    service_types = [
+        r[0] for r in session_db.query(Match.service_type)
+        .filter(Match.pin_id == user.id, Match.status == 'Completed', Match.service_type.isnot(None))
+        .distinct().all() if r[0]
+    ]
+
+    render_data = pin_boundary.renderList(items, total_count, page_meta, user)
+    render_data['filters'] = filters
+    render_data['service_types'] = service_types
+    return render_template('completed_history/list.html', **render_data)
+
 
 # ==================== ERROR HANDLERS ====================
 

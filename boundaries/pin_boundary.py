@@ -13,7 +13,9 @@ from controllers.searchRequestCtrl import SearchRequestCtrl
 from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
 from controllers.requestViewCountCtrl import RequestViewCountCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
-
+from controllers.completedHistoryCtrl import (
+    CompletedHistoryCtrl, ValidationError, AuthError as CompletedAuthError
+)
 
 class PINBoundary:
     """
@@ -33,7 +35,8 @@ class PINBoundary:
         self.view_shortlist_count_ctrl = ViewShortlistCountCtrl()
         self.view_history_ctrl = ViewHistoryCtrl()
         self.view_request_count_ctrl = RequestViewCountCtrl()
-    
+        self.completed_history_ctrl = CompletedHistoryCtrl()
+
     def display_menu(self):
         """Display the main menu for PIN users"""
         print("\n" + "="*60)
@@ -56,6 +59,7 @@ class PINBoundary:
         print("8.  Search Requests")
         print("9.  View Shortlist Count")
         print("10. View Completed Match History")
+        print("11. Search/Filter Completed Match History")
         
         print("\n--- OTHER ---")
         print("0.  Exit")
@@ -87,6 +91,8 @@ class PINBoundary:
                 self.handle_view_shortlist_count()
             elif choice == "10":
                 self.handle_view_completed_history()
+            elif choice =="11":
+                self.handle_search_completed_history()
             elif choice == "0":
                 print("\nThank you for using CSR Volunteering System!")
                 break
@@ -345,24 +351,15 @@ class PINBoundary:
             return None
         
         try:
-            # Call controller - matches BCE/Sequence diagram
             items, total_count, page_meta = self.view_history_ctrl.viewHistory(
-                pinID=user.id,
-                page=page
+                pinID=user.id, page=page
             )
             return items, total_count, page_meta, user
-        except AuthError as e:
-            # Error handling: return None for web, print for CLI
-            if current_user is None:  # CLI mode
-                print("\n" + "="*60)
-                print("✗ AUTHORIZATION ERROR")
-                print(f"  {str(e)}")
-                print("="*60)
+        except CompletedAuthError as ae:
+            self.showInlineError(str(ae))
             return None
         except Exception as e:
-            # Error handling: return None for web, print for CLI
-            if current_user is None:  # CLI mode
-                print(f"\n✗ Error: {str(e)}")
+            self.showInlineError(f"Unexpected error: {e}")
             return None
     
     def renderList(self, items, total_count, page_meta, current_user=None):
@@ -409,57 +406,152 @@ class PINBoundary:
                 print(f"\n✓ Found {total_count} completed match(es)")
             self.render_list(items, total_count, page_meta)
     
-    def render_list(self, items, total_count, page_meta):
+    def render_list(self, items, total_count, page_meta, filters=None):
         """
         Render list of completed matches (CLI display)
-        This is the CLI version of renderList()
+        Extended to optionally show active filters (serviceType/from/to).
         """
         print("\n" + "="*100)
         print(f"Page {page_meta['page']} of {page_meta['totalPages']} | Total: {total_count} completed match(es)")
+        if filters:
+            f_st = filters.get('serviceType') or 'Any'
+            f_fr = filters.get('from') or '—'
+            f_to = filters.get('to') or '—'
+            print(f"Filters -> ServiceType: {f_st} | From: {f_fr} | To: {f_to}")
         print("="*100)
-        
+
         if total_count == 0:
-            # Empty state handled here for CLI
             print("No completed matches found.")
-            print("You haven't received any completed assistance yet.")
             print("="*100)
             return
-        
+
         print(f"{'Match ID':<10} {'Request Title':<30} {'Service Type':<20} {'Volunteer':<20} {'Completed At':<20}")
         print("-"*100)
-        
+
         for item in items:
             match_id = item.match_id
-            title = ""
-            if item.request:
+            title = "Request not found"
+            if item.request and item.request.title:
                 title = item.request.title[:27] + "..." if len(item.request.title) > 30 else item.request.title
-            else:
-                title = "Request not found"
-            
             service_type = item.service_type or "N/A"
-            volunteer = ""
+            volunteer = "Unknown"
             if item.csr_rep:
                 volunteer = f"{item.csr_rep.first_name} {item.csr_rep.last_name}"
-            else:
-                volunteer = "Unknown"
-            
-            completed = ""
             if item.completed_at:
                 completed = item.completed_at.strftime('%Y-%m-%d %H:%M')
             else:
                 completed = item.created_at.strftime('%Y-%m-%d %H:%M')
-            
             print(f"{match_id:<10} {title:<30} {service_type:<20} {volunteer:<20} {completed:<20}")
-        
+
         print("-"*100)
-        
-        # Pagination info
         if page_meta['hasPrev'] or page_meta['hasNext']:
             print("\nPagination:")
             if page_meta['hasPrev']:
                 print(f"  Previous page: {page_meta['page'] - 1}")
             if page_meta['hasNext']:
                 print(f"  Next page: {page_meta['page'] + 1}")
+
+# -------------------- SEARCH / FILTER COMPLETED HISTORY (BCE) --------------------
+    def onSearchClick(self, serviceType=None, fromDate=None, toDate=None, page: int = 1, current_user=None):
+        """
+        BCE: onSearchClick(serviceType?, fromDate?, toDate?, page?)
+        Returns (items, total_count, page_meta, user, filters) or None on error.
+        """
+        user = current_user or (self.auth_controller.get_current_user() if self.auth_controller.is_logged_in() else None)
+        if not user or getattr(user.user_profile, "profile_name", None) != "PIN":
+            self.showInlineError("Not authorized. Please login as a PIN.")
+            return None
+
+        try:
+            items, total_count, page_meta = self.completed_history_ctrl.searchCompleted(
+                pinID=user.id,
+                serviceType=(serviceType or None),
+                fromDate=(fromDate or None),
+                toDate=(toDate or None),
+                page=page
+            )
+            return items, total_count, page_meta, user, {
+                "serviceType": serviceType or None,
+                "from": fromDate or None,
+                "to": toDate or None
+            }
+        except ValidationError as ve:
+            self.showInlineError(str(ve))
+            return None
+        except CompletedAuthError as ae:  # <-- catch the correct AuthError
+            self.showInlineError(str(ae))
+            return None
+        except Exception as e:
+            self.showInlineError(f"Unexpected error: {e}")
+            return None
+
+    def showInlineError(self, msg: str):
+        """BCE: showInlineError(msg) — CLI/web-safe print; your web route also flashes messages."""
+        print("\n" + "="*60)
+        print("✗ ERROR")
+        print(" ", msg)
+        print("="*60)
+
+    def showNoResults(self):
+        """BCE: showNoResults() — CLI helper (web shows message via template/flash)."""
+        print("\nNo completed matches found matching your filters.")
+        print("Tip: Clear service type or widen the date range.\n")
+
+
+    def handle_search_completed_history(self):
+        """
+        CLI entry that mirrors the sequence:
+        PIN -> UI.onSearchClick(...) -> Ctrl.validateDateRange -> Entity.findCompletedByPinWithFilters -> UI.showList/showNoResults
+        Also supports pagination while keeping filters applied.
+        """
+        print("\n--- SEARCH/FILTER COMPLETED MATCH HISTORY ---")
+        if not self.auth_controller.is_logged_in():
+            print("\n✗ Please login first")
+            return
+
+        # Collect filters (all optional)
+        serviceType = input("Service Type (Enter to skip): ").strip() or None
+        fromDate    = input("From date (YYYY-MM-DD, optional): ").strip() or None
+        toDate      = input("To date   (YYYY-MM-DD, optional): ").strip() or None
+
+        # First search (page 1)
+        result = self.onSearchClick(serviceType, fromDate, toDate, page=1)
+        if not result:
+            return
+
+        items, total_count, page_meta, user, filters = result
+
+        # Render
+        if total_count == 0:
+            self.showNoResults()
+            return
+
+        self.render_list(items, total_count, page_meta, filters=filters)
+
+        # Pagination loop with filters persisted
+        while True:
+            nav = input("\n[N]ext, [P]rev, [Q]uit: ").strip().lower()
+            if nav == "q":
+                break
+            elif nav == "n" and page_meta.get("hasNext"):
+                next_page = page_meta["page"] + 1
+            elif nav == "p" and page_meta.get("hasPrev"):
+                next_page = page_meta["page"] - 1
+            else:
+                print("No more pages in that direction.")
+                continue
+
+            result = self.onSearchClick(filters.get("serviceType"), filters.get("from"), filters.get("to"), page=next_page)
+            if not result:
+                # error already shown
+                break
+
+            items, total_count, page_meta, user, filters = result
+            if total_count == 0:
+                self.showNoResults()
+                break
+            self.render_list(items, total_count, page_meta, filters=filters)
+
     
     # ==================== DISPLAY HELPERS ====================
     

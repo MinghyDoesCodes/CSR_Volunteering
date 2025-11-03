@@ -4,8 +4,11 @@ Represents a match between a PIN's request and a CSR Rep volunteer
 """
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, time, date
 from database.db_config import Base
+from sqlalchemy import desc, nullslast, and_
+from typing import Optional, List, Tuple
+
 
 
 class Match(Base):
@@ -54,43 +57,64 @@ class Match(Base):
     def findCompletedByPin(cls, session, pin_id: int, page: int = 1, page_size: int = 10):
         """
         Return (items, total_count) for completed matches belonging to pin_id,
-        sorted by most recent first, paginated by (page, page_size).
-        
-        Args:
-            session: Database session
-            pin_id (int): The PIN user's ID
-            page (int): Page number (1-indexed)
-            page_size (int): Number of items per page
-            
-        Returns:
-            tuple: (items list, total_count)
+        sorted by most recent first, paginated.
         """
-        # Query for completed matches for this PIN
-        query = session.query(cls).filter_by(
-            pin_id=pin_id,
-            status='Completed'
-        )
-        
-        # Get total count
+        query = cls._base_completed_query(session, pin_id)
+
         total_count = query.count()
-        
-        # Sort by most recent first (completed_at descending, then created_at descending)
-        from sqlalchemy import desc, nullslast
+
         query = query.order_by(
             nullslast(desc(cls.completed_at)),
             desc(cls.created_at)
-        )
-        
-        # Calculate offset for pagination
-        offset = (page - 1) * page_size
-        
-        # Apply pagination
-        items = query.offset(offset).limit(page_size).all()
-        
+    )
+
+        offset = max(0, (int(page) - 1) * int(page_size))
+        items = query.offset(offset).limit(int(page_size)).all()
         return items, total_count
+
     
     @classmethod
     def getAllMatches(cls, session):
         """Get all matches"""
         return session.query(cls).all()
+    
+    @classmethod
+    def _base_completed_query(cls, session, pin_id: int):
+        return (
+            session.query(cls)
+            .filter(
+                cls.pin_id == pin_id,
+                cls.status == 'Completed'
+        )
+    )
 
+    @classmethod
+    def findCompletedByPinWithFilters(
+        cls,
+        session,
+        pinID: int,
+        serviceType: Optional[str] = None,
+        fromDate: Optional[date] = None,
+        toDate: Optional[date]= None,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> Tuple[List["Match"], int]:
+        query = session.query(cls).filter(cls.pin_id == pinID, cls.status == "Completed")
+
+        if serviceType and str(serviceType).strip():
+            query = query.filter(cls.service_type == str(serviceType).strip())
+
+        if fromDate:
+            start_dt = datetime.combine(fromDate, time.min)
+            query = query.filter(cls.completed_at >= start_dt)
+        if toDate:
+            end_dt = datetime.combine(toDate, time.max)
+            query = query.filter(cls.completed_at <= end_dt)
+
+        total_count = query.count()
+        from sqlalchemy import desc, nullslast
+        query = query.order_by(nullslast(desc(cls.completed_at)), desc(cls.created_at))
+
+        offset = max(0, (int(page) - 1) * int(page_size))
+        items = query.offset(offset).limit(int(page_size)).all()
+        return items, total_count
