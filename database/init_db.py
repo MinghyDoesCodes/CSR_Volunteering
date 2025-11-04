@@ -42,32 +42,109 @@ def seed_initial_data():
             )
         ]
         
-        # Add profiles to database
+        # Add profiles to database (skip if they already exist)
+        profiles_created = 0
         for profile in profiles:
-            session.add(profile)
+            existing = session.query(UserProfile).filter_by(profile_name=profile.profile_name).first()
+            if not existing:
+                session.add(profile)
+                profiles_created += 1
         
-        session.commit()
-        print("✓ User profiles created successfully")
+        if profiles_created > 0:
+            session.commit()
+            print(f"✓ {profiles_created} new user profile(s) created successfully")
+        else:
+            print("✓ All user profiles already exist")
+        
+        # Get profile IDs (they should exist now)
+        admin_profile = session.query(UserProfile).filter_by(profile_name="User Admin").first()
+        csr_profile = session.query(UserProfile).filter_by(profile_name="CSR Rep").first()
+        pin_profile = session.query(UserProfile).filter_by(profile_name="PIN").first()
+        platform_manager_profile = session.query(UserProfile).filter_by(profile_name="Platform Manager").first()
         
         # Create default admin account
-        # Hash the password for security
-        hashed_password = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt())
+        existing_admin = session.query(UserAccount).filter_by(username="admin").first()
+        if not existing_admin:
+            hashed_password = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt())
+            admin_account = UserAccount(
+                username="admin",
+                email="admin@csrvolunteering.com",
+                password_hash=hashed_password.decode('utf-8'),
+                first_name="System",
+                last_name="Administrator",
+                user_profile_id=admin_profile.id if admin_profile else 1,
+                is_active=True
+            )
+            session.add(admin_account)
+            session.commit()
+            print("✓ Default admin account created")
+            print("  Username: admin")
+            print("  Password: admin123")
+        else:
+            print("✓ Default admin account already exists")
         
-        admin_account = UserAccount(
-            username="admin",
-            email="admin@csrvolunteering.com",
-            password_hash=hashed_password.decode('utf-8'),
-            first_name="System",
-            last_name="Administrator",
-            user_profile_id=1,  # User Admin profile
-            is_active=True
-        )
+        # Create default PIN account
+        existing_pin = session.query(UserAccount).filter_by(username="pin").first()
+        if not existing_pin and pin_profile:
+            hashed_password = bcrypt.hashpw("pin123".encode('utf-8'), bcrypt.gensalt())
+            pin_account = UserAccount(
+                username="pin",
+                email="pin@csrvolunteering.com",
+                password_hash=hashed_password.decode('utf-8'),
+                first_name="PIN",
+                last_name="Test",
+                user_profile_id=pin_profile.id,
+                is_active=True
+            )
+            session.add(pin_account)
+            session.commit()
+            print("✓ Default PIN account created")
+            print("  Username: pin")
+            print("  Password: pin123")
+        else:
+            print("✓ Default PIN account already exists")
         
-        session.add(admin_account)
-        session.commit()
-        print("✓ Default admin account created")
-        print("  Username: admin")
-        print("  Password: admin123")
+        # Create default CSR Rep account
+        existing_csr = session.query(UserAccount).filter_by(username="csr").first()
+        if not existing_csr and csr_profile:
+            hashed_password = bcrypt.hashpw("csr123".encode('utf-8'), bcrypt.gensalt())
+            csr_account = UserAccount(
+                username="csr",
+                email="csr@csrvolunteering.com",
+                password_hash=hashed_password.decode('utf-8'),
+                first_name="CSR",
+                last_name="Rep",
+                user_profile_id=csr_profile.id,
+                is_active=True
+            )
+            session.add(csr_account)
+            session.commit()
+            print("✓ Default CSR Rep account created")
+            print("  Username: csr")
+            print("  Password: csr123")
+        else:
+            print("✓ Default CSR Rep account already exists")
+        
+        # Create default Platform Manager account
+        existing_pm = session.query(UserAccount).filter_by(username="pm").first()
+        if not existing_pm and platform_manager_profile:
+            hashed_password = bcrypt.hashpw("pm123".encode('utf-8'), bcrypt.gensalt())
+            pm_account = UserAccount(
+                username="pm",
+                email="pm@csrvolunteering.com",
+                password_hash=hashed_password.decode('utf-8'),
+                first_name="Platform",
+                last_name="Manager",
+                user_profile_id=platform_manager_profile.id,
+                is_active=True
+            )
+            session.add(pm_account)
+            session.commit()
+            print("✓ Default Platform Manager account created")
+            print("  Username: pm")
+            print("  Password: pm123")
+        else:
+            print("✓ Default Platform Manager account already exists")
         
     except Exception as e:
         session.rollback()
