@@ -593,6 +593,44 @@ def viewCompletedHistory():
     # Route passes data to template
     return render_template('completed_history/list.html', **render_data)
 
+@app.route('/completed-history/search', methods=['GET'])
+@require_login
+def searchCompletedHistory():
+    """Search/filter completed match history for PIN users - Using Boundary Pattern"""
+    current_user = auth_controller.get_current_user()
+    
+    # Check if user is PIN
+    if not current_user or current_user.user_profile.profile_name != 'PIN':
+        flash('Only PIN users can view completed match history', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get filter parameters from query string
+    service_type = request.args.get('serviceType', '').strip() or None
+    from_date = request.args.get('from', '').strip() or None
+    to_date = request.args.get('to', '').strip() or None
+    page = request.args.get('page', 1, type=int)
+    
+    # Call Boundary method (matches BCE diagram: onSearchClick())
+    result = pin_boundary.onSearchClick(
+        serviceType=service_type,
+        fromDate=from_date,
+        toDate=to_date,
+        page=page,
+        current_user=current_user
+    )
+    
+    if result is None:
+        flash('Unable to search completed history. Please check your filters and try again.', 'error')
+        return redirect(url_for('viewCompletedHistory'))
+    
+    items, total_count, page_meta, user, filters = result
+    
+    # Boundary prepares data for rendering (matches BCE: renderList())
+    render_data = pin_boundary.renderList(items, total_count, page_meta, user, filters=filters)
+    
+    # Route passes data to template
+    return render_template('completed_history/list.html', **render_data)
+
 # ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)

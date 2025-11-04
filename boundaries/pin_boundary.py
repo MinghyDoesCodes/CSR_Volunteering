@@ -362,7 +362,7 @@ class PINBoundary:
             self.showInlineError(f"Unexpected error: {e}")
             return None
     
-    def renderList(self, items, total_count, page_meta, current_user=None):
+    def renderList(self, items, total_count, page_meta, current_user=None, filters=None):
         """
         Prepare data for rendering the list
         Matches BCE diagram: renderList(items, totalCount, pageMeta)
@@ -370,13 +370,25 @@ class PINBoundary:
         For web interface: Returns dict for template rendering
         For CLI: Use render_list() method instead
         """
+        # Get unique service types from existing matches for dropdown
+        from database.db_config import get_session
+        from entities.match import Match
+        session = get_session()
+        service_types = session.query(Match.service_type).filter(
+            Match.service_type.isnot(None),
+            Match.service_type != ''
+        ).distinct().all()
+        service_types = [st[0] for st in service_types if st[0]]
+        
         # This returns data structure for template rendering
         # Handles empty state implicitly (template checks total_count == 0)
         return {
             'items': items,
             'total_count': total_count,
             'page_meta': page_meta,
-            'current_user': current_user
+            'current_user': current_user,
+            'service_types': service_types,
+            'filters': filters or {}
         }
     
     def handle_view_completed_history(self):
