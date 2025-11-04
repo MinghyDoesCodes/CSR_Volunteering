@@ -82,8 +82,8 @@ def generate_test_requests():
             ("Event setup help", "Need volunteers for community event setup"),
         ]
         
-        # Status options
-        statuses = ['Pending', 'Pending', 'Pending', 'Pending', 'Completed']  # Mostly pending, some completed
+        # Status options - all requests start as Pending (newly submitted)
+        status = 'Pending'
         
         # Generate 120 requests
         requests_created = 0
@@ -111,8 +111,7 @@ def generate_test_requests():
             if random.random() > 0.7:
                 description += " This is urgent and would be greatly appreciated."
             
-            # Random status (mostly pending)
-            status = random.choice(statuses)
+            # All requests start as Pending (newly submitted requests)
             
             # Random creation date (spread over last 90 days)
             days_ago = random.randint(0, 90)
@@ -137,7 +136,7 @@ def generate_test_requests():
         session.commit()
         print(f"\n✓ {requests_created} test requests created successfully")
         print(f"  All requests created by: {pin_account.username} (PIN user)")
-        print(f"  Status distribution: Mostly 'Pending', some 'Completed'")
+        print(f"  Status: All requests are 'Pending' (newly submitted)")
         print(f"  Date range: Last 90 days")
         print(f"\n⚠️  Note: These requests are owned by the default PIN account.")
         print(f"   Each PIN user will only see requests they created.")
