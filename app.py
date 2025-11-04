@@ -27,9 +27,6 @@ from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
 from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
-from controllers.requestViewCountCtrl import RequestViewCountCtrl
-from controllers.completedHistoryCtrl import CompletedHistoryCtrl, ValidationError
-from entities.match import Match
 
 import os
 
@@ -60,7 +57,6 @@ viewShortlistCountCtrl = ViewShortlistCountCtrl()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 viewHistoryCtrl = ViewHistoryCtrl()
 pin_boundary = PINBoundary()
-requestViewCountCtrl = RequestViewCountCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -419,22 +415,31 @@ def search_user_profiles():
 @require_login
 def listRequests():
     """List all request"""
-    requests = viewRequestCtrl.listRequests()
+    current_user = auth_controller.get_current_user()
+    user_profile_name = current_user.user_profile.profile_name if current_user else None
+    
+    # Get requests based on user role
+    if user_profile_name == 'PIN':
+        # PIN users only see requests they created
+        all_requests = viewRequestCtrl.listRequests()
+        requests = [req for req in all_requests if req.user_account_id == current_user.id]
+    else:
+        # CSR Reps and other roles see all requests
+        requests = viewRequestCtrl.listRequests()
     
     # Get shortlist counts for PIN users
     shortlist_counts = {}
     csr_shortlisted = {}
-    current_user = auth_controller.get_current_user()
     
-    if current_user and current_user.user_profile.profile_name == 'PIN':
+    if user_profile_name == 'PIN':
         shortlist_counts = viewShortlistCountCtrl.getShortlistCountsForUser(current_user.id)
-    elif current_user and current_user.user_profile.profile_name == 'CSR Rep':
+    elif user_profile_name == 'CSR Rep':
         # Get CSR Rep's shortlist status for each request
         for req in requests:
             csr_shortlisted[req.request_id] = shortlistRequestCtrl.isShortlisted(req.request_id, current_user.id)
     
     # Pass user profile for template logic
-    user_profile = current_user.user_profile.profile_name if current_user else None
+    user_profile = user_profile_name
     
     return render_template('requests/list.html', requests=requests, shortlist_counts=shortlist_counts, csr_shortlisted=csr_shortlisted, user_profile=user_profile)
 
@@ -465,8 +470,8 @@ def createRequest():
 @require_login
 def viewRequest(request_id):
     """View request details"""
-    updated_request = requestViewCountCtrl.requestViewCount(request_id)
-    if not updated_request:  # Not found
+    request_obj = viewRequestCtrl.viewRequest(request_id)
+    if not request_obj:  # Not found
         flash(f"Request with ID {request_id} not found", 'error')
         return redirect(url_for('listRequests'))
     
@@ -481,7 +486,7 @@ def viewRequest(request_id):
         # Get shortlist count for PIN users
         shortlist_count = viewShortlistCountCtrl.getShortlistCount(request_id)
     
-    return render_template('requests/view.html', request=updated_request, current_user=current_user, is_shortlisted=is_shortlisted, shortlist_count=shortlist_count)
+    return render_template('requests/view.html', request=request_obj, current_user=current_user, is_shortlisted=is_shortlisted, shortlist_count=shortlist_count)
 
 @app.route('/requests/<int:request_id>/edit', methods=['GET', 'POST'])
 @require_login
@@ -587,47 +592,6 @@ def viewCompletedHistory():
     
     # Route passes data to template
     return render_template('completed_history/list.html', **render_data)
-
-@app.route('/completed-history/search')
-@require_login
-def searchCompletedHistory():
-    current_user = auth_controller.get_current_user()
-    if not current_user or current_user.user_profile.profile_name != 'PIN':
-        flash('Only PIN users can search completed history', 'error')
-        return redirect(url_for('dashboard'))
-
-    serviceType = request.args.get('serviceType') or None
-    fromDate    = request.args.get('from') or None
-    toDate      = request.args.get('to') or None
-    page        = request.args.get('page', 1, type=int)
-
-    result = pin_boundary.onSearchClick(
-        serviceType=serviceType,
-        fromDate=fromDate,
-        toDate=toDate,
-        page=page,
-        current_user=current_user,
-    )
-    if result is None:
-        # Boundary already shows inline/flash errors
-        return redirect(url_for('viewCompletedHistory'))
-
-    items, total_count, page_meta, user, filters = result
-
-    # build dropdown values
-    session_db = get_session()
-    from entities.match import Match
-    service_types = [
-        r[0] for r in session_db.query(Match.service_type)
-        .filter(Match.pin_id == user.id, Match.status == 'Completed', Match.service_type.isnot(None))
-        .distinct().all() if r[0]
-    ]
-
-    render_data = pin_boundary.renderList(items, total_count, page_meta, user)
-    render_data['filters'] = filters
-    render_data['service_types'] = service_types
-    return render_template('completed_history/list.html', **render_data)
-
 
 # ==================== ERROR HANDLERS ====================
 
