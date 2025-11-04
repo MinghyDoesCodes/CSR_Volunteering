@@ -539,12 +539,16 @@ def searchRequests():
     keyword = request.args.get('keyword', '')
     status = request.args.get('status', '')
     
+    current_user = auth_controller.get_current_user()
+    user_profile = current_user.user_profile.profile_name if current_user else None
+    
     requests = searchRequestCtrl.searchRequests(keyword or None, status or None)
     
     return render_template('requests/search.html', 
                          requests=requests,
                          keyword=keyword,
-                         selected_status=status)
+                         selected_status=status,
+                         user_profile=user_profile)
 
 @app.route('/requests/<int:request_id>/shortlist', methods=['POST'])
 @require_login
