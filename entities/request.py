@@ -76,6 +76,19 @@ class Request(Base):
     
     def deleteRequest(self, session):
         """Delete a request"""
+        # Delete all related shortlists first (to avoid foreign key constraint violation)
+        from entities.shortlist import Shortlist
+        shortlists_to_delete = session.query(Shortlist).filter_by(request_id=self.request_id).all()
+        for shortlist in shortlists_to_delete:
+            session.delete(shortlist)
+        
+        # Delete all related matches
+        from entities.match import Match
+        matches_to_delete = session.query(Match).filter_by(request_id=self.request_id).all()
+        for match in matches_to_delete:
+            session.delete(match)
+        
+        # Now delete the request
         session.delete(self)
         session.commit()
         return 2
