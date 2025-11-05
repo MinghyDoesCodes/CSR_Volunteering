@@ -27,6 +27,8 @@ from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
 from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
+from controllers.createCategoryCtrl import CreateCategoryCtrl
+from controllers.viewCategoryCtrl import ViewCategoryCtrl
 
 import os
 
@@ -57,6 +59,8 @@ viewShortlistCountCtrl = ViewShortlistCountCtrl()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 viewHistoryCtrl = ViewHistoryCtrl()
 pin_boundary = PINBoundary()
+createCategoryCtrl = CreateCategoryCtrl()
+viewCategoryCtrl = ViewCategoryCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -451,11 +455,13 @@ def createRequest():
         user_account_id = auth_controller.get_current_user().id
         title = request.form.get('request_title')
         description = request.form.get('request_description')
+        category_id = request.form.get('category_id')
         
         result = createRequestCtrl.createRequest(
             userAccountID=user_account_id,
             title=title,
-            description=description
+            description=description,
+            categoryID=category_id
         )
         
         if result == 0:
@@ -464,7 +470,9 @@ def createRequest():
             flash("Request created successfully", 'success')
             return redirect(url_for('listRequests'))
     
-    return render_template('requests/create.html')
+    # Get categories for dropdown
+    categories = viewCategoryCtrl.listActiveCategories()
+    return render_template('requests/create.html', categories=categories)
 
 @app.route('/requests/<int:request_id>')
 @require_login
@@ -495,11 +503,13 @@ def updateRequest(request_id):
     if request.method == 'POST':
         title = request.form.get('request_title')
         description = request.form.get('request_description')
+        category_id = request.form.get('category_id')
         status = request.form.get('request_status')
         
         result = updateRequestCtrl.updateRequest(
             requestID=request_id,
             title=title if title else None,
+            categoryID=int(category_id) if category_id else None,
             description=description if description else None,
             status=status if status else None
         )
@@ -516,7 +526,10 @@ def updateRequest(request_id):
         flash(f"Request with ID {request_id} not found", 'error')
         return redirect(url_for('listRequests'))
     
-    return render_template('requests/edit.html', request=request_obj)
+    # Get categories for dropdown
+    categories = viewCategoryCtrl.listActiveCategories()
+    
+    return render_template('requests/edit.html', request=request_obj, categories=categories)
 
 @app.route('/requests/<int:request_id>/delete', methods=['POST'])
 @require_login
@@ -564,6 +577,49 @@ def shortlistRequest(request_id):
         flash(message, 'error')
     
     return redirect(url_for('viewRequest', request_id=request_id))
+
+# ==================== CATEGORY MANAGEMENT ====================
+
+@app.route('/categories')
+@require_login
+def listCategories():
+    """List all categories"""
+    categories = viewCategoryCtrl.listCategories()
+    return render_template('categories/list.html', categories=categories)
+
+@app.route('/categories/create', methods=['GET', 'POST'])
+@require_login
+def createCategory():
+    """Create a new category"""
+    if request.method == 'POST':
+        user_id = auth_controller.get_current_user().id
+        title = request.form.get('category_title')
+        description = request.form.get('category_description')
+        
+        result = createCategoryCtrl.createCategory(
+            userID=user_id,
+            title=title,
+            description=description
+        )
+        
+        if result == 0:
+            flash("User does not exist", 'error')
+        elif result == 1:
+            flash("Category created successfully", 'success')
+            return redirect(url_for('listCategories'))
+    
+    return render_template('categories/create.html')
+
+@app.route('/categories/<int:category_id>')
+@require_login
+def viewCategory(category_id):
+    """View category details"""
+    category = viewCategoryCtrl.viewCategory(category_id)
+    if not category:  # Not found
+        flash(f"Category with ID {category_id} not found", 'error')
+        return redirect(url_for('listCategories'))
+    
+    return render_template('categories/view.html', category=category)
 
 # ==================== COMPLETED MATCH HISTORY ====================
 

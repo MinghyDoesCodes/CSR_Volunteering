@@ -24,6 +24,18 @@
         </div>
 
         <div class="form-row">
+            <div class="form-group
+                <label for="category_id">Category <span class="required">*</span></label>
+                <select id="category_id" name="category_id" class="form-control" required>
+                    <option value="">Select Category...</option>
+                    {% for category in categories %}
+                        <option value="{{ category.category_id }}">{{ category.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
                 <label for="request_description">Request Description <span class="required">*</span></label>
                 <textarea id="request_description" name="request_description" class="form-control" required></textarea>

@@ -50,8 +50,14 @@
                 <span><strong>{{ request.title }}</strong></span>
             </div>
             <div class="detail-item">
-                <label>Description:</label>
-                <span>{{ request.description }}</span>
+                <label>Category:</label>
+                <span>
+                    {% if request.category %}
+                        {{ request.category.title }}
+                    {% else %}
+                        Unassigned
+                    {% endif %}
+                </span>
             </div>
             <div class="detail-item">
                 <label>Requested By:</label>
@@ -62,6 +68,10 @@
                         Unknown
                     {% endif %}
                 </span>
+            </div>
+            <div class="detail-item">
+                <label>Description:</label>
+                <span>{{ request.description }}</span>
             </div>
             <div class="detail-item">
                 <label>Status:</label>

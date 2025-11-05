@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %} View Category - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="6" x2="12" y2="12"></line>
+            <line x1="12" y1="12" x2="16" y2="14"></line>
+        </svg>
+        Category Details
+    </h1>
+    <div class="page-actions">
+        <a href="{{ url_for('listCategories') }}" class="btn btn-secondary">← Back to List</a>
+    </div>
+</div>
+
+<div class="detail-container">
+    <div class="detail-card">
+        <h3>Category Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Category ID:</label>
+                <span>{{ category.category_id }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Title:</label>
+                <span><strong>{{ category.title }}</strong></span>
+            </div>
+            <div class="detail-item">
+                <label>Description:</label>
+                <span>{{ category.description }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Created By:</label>
+                <span>
+                    {% if category.creator %}
+                        {{ category.creator.first_name }} {{ category.creator.last_name }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-item">
+                <label>Status:</label>
+                <span>{{ category.status }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <h3>Additional Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Created At:</label>
+                <span>{{ category.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Last Updated At:</label>
+                <span>{{ category.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

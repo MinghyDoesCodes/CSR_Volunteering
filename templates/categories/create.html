@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Create Category - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Create Category
+    </h1>
+    <a href="{{ url_for('listCategories') }}" class="btn btn-secondary">← Back to List</a>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('createCategory') }}" class="form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="category_title">Category Title <span class="required">*</span></label>
+                <input type="text" id="category_title" name="category_title" class="form-control" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="category_description">Category Description <span class="required">*</span></label>
+                <textarea id="category_description" name="category_description" class="form-control" required></textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Category</button>
+            <a href="{{ url_for('listCategories') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

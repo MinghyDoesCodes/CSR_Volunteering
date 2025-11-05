@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.db_config import Base
-from entities.user_account import UserAccount as UA
 
 class Request(Base):
     __tablename__ = 'requests'
@@ -15,6 +14,12 @@ class Request(Base):
     
     # Relationship to UserAccount
     pin = relationship("UserAccount", back_populates="requests")
+
+    # Foreign key to category
+    category_id = Column(Integer, ForeignKey('categories.category_id'), nullable=True)
+
+    # Relationship to Category
+    category = relationship("Category", back_populates="requests")
     
     # Relationship to Shortlists
     shortlists = relationship("Shortlist", back_populates="request")
@@ -50,8 +55,8 @@ class Request(Base):
         self.view_count +=  1
         session.commit()
     
-    def createRequest(session, user_account_id, title, description):
-
+    def createRequest(session, user_account_id, title, category_id, description):
+        from entities.user_account import UserAccount as UA
         user = UA.findById(session, user_account_id)
         if not user:
             return 0 # User does not exist
@@ -60,15 +65,17 @@ class Request(Base):
         request = Request(
             user_account_id=user_account_id,
             title=title,
+            category_id=category_id,
             description=description
         )
         session.add(request)
         session.commit()
         return 1
     
-    def updateRequest(self , session, title, description, status):
+    def updateRequest(self , session, title, categoryID, description, status):
         """Update request details"""
         self.title = title
+        self.category_id = categoryID
         self.description = description
         self.status = status
         session.commit()

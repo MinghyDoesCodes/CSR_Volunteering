@@ -1,17 +1,16 @@
-from entities.request import Request
+from entities.category import Category
 from database.db_config import get_session
 
-class CreateRequestCtrl:
+class CreateCategoryCtrl:
     def __init__(self, session=None):
         self.session = get_session()
 
-    def createRequest(self, userAccountID, title, categoryID, description):
+    def createCategory(self, userID, title, description=None):
         
-        result = Request.createRequest(
+        result = Category.createCategory(
             self.session,
-            user_account_id=userAccountID,
+            userID=userID,
             title=title,
-            category_id=categoryID,
             description=description
         )
         return result # 0: User does not exist, 1: Success

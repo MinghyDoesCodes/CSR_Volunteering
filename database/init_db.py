@@ -6,6 +6,7 @@ Run this to create the database and seed initial data
 from database.db_config import init_database, get_session
 from entities.user_profile import UserProfile
 from entities.user_account import UserAccount
+from entities.category import Category
 import bcrypt
 
 
@@ -145,6 +146,31 @@ def seed_initial_data():
             print("  Password: pm123")
         else:
             print("✓ Default Platform Manager account already exists")
+
+        # Create Categories
+        categories = [
+            Category(created_by=4, title="Medical Assistance", description="Bringing PIN to clinic/hospital, collecting medication, accompanying to appointments"),
+            Category(created_by=4, title="Mobility Support", description="Requesting wheelchairs, assistance with mobility aids, transporting PINs to events"),
+            Category(created_by=4, title="Household Assistance", description="Cleaning, minor repairs, grocery shopping, cooking"),
+            Category(created_by=4, title="Elderly Care", description="Companionship, reading sessions, help with technology for seniors"),
+            Category(created_by=4, title="Childcare Support", description="Babysitting, helping children with homework, escorting children to school"),
+            Category(created_by=4, title="Food & Essentials Aid", description="Delivering meals, distributing food packs or hygiene kits"),
+            Category(created_by=4, title="Community Events", description="Helping to organize charity drives, community clean-ups"),
+            Category(created_by=4, title="Environmental Projects", description="Tree planting, recycling drives, community garden maintenance"),
+            Category(created_by=4, title="Miscellaneous", description="For requests that do not fit into other categories"),
+        ]
+        categories_created = 0
+        for category in categories:
+            existing = session.query(Category).filter_by(title=category.title).first()
+            if not existing:
+                session.add(category)
+                categories_created += 1
+
+        if categories_created > 0:
+            session.commit()
+            print(f"✓ {categories_created} new category(ies) created successfully")
+        else:
+            print("✓ Categories already exists")
         
     except Exception as e:
         session.rollback()

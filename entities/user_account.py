@@ -39,7 +39,10 @@ class UserAccount(Base):
     
     # Relationship to Matches (as CSR Rep)
     matches_as_csr = relationship("Match", foreign_keys="Match.csr_rep_id", back_populates="csr_rep")
-    
+
+    # Relationship to categories (as Platform Manager)
+    categories = relationship("Category", back_populates="creator")
+
     # Account status
     is_active = Column(Boolean, default=True, nullable=False)
     
