@@ -48,6 +48,6 @@ def init_database():
     from entities.category import Category
     
     # Create all tables
-    Base.metadata.drop_all(bind=engine) # Uncomment this line if you want to delete all existing data
+    #Base.metadata.drop_all(bind=engine) # Uncomment this line if you want to delete all existing data
     Base.metadata.create_all(bind=engine)
     print("Database initialized successfully!")
