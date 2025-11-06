@@ -76,6 +76,7 @@ class Category(Base):
             return 1  # Already suspended
         self.is_active = False
         self.updated_at = datetime.now()
+        self.status = 'Suspended'
         session.commit()
         return 2 # Successfully suspended
     
@@ -85,5 +86,6 @@ class Category(Base):
             return 1  # Already active
         self.is_active = True
         self.updated_at = datetime.now()
+        self.status = 'Active'
         session.commit()
         return 2 # Successfully activated
