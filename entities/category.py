@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey,Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.db_config import Base
@@ -89,3 +89,24 @@ class Category(Base):
         self.status = 'Active'
         session.commit()
         return 2 # Successfully activated
+    
+    def searchCategory(session, keyword, status):
+        """Search request by keyword and status"""
+        query = session.query(Category)
+
+        #Apply keyword filter
+        if keyword:
+            keyword_filter = f"%{keyword}%"
+            query = query = query.filter(
+                (Category.title.ilike(keyword_filter)) |
+                (Category.description.ilike(keyword_filter))
+            )
+
+        #Apply status filter
+        if status:
+            # Normalize status to match database format (capitalize first letter)
+            # Form sends "pending" or "completed", but DB stores "Pending" or "Completed"
+            normalized_status = status.capitalize()
+            query = query.filter_by(status=normalized_status)
+        
+        return query.all()

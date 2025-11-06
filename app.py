@@ -31,6 +31,7 @@ from controllers.createCategoryCtrl import CreateCategoryCtrl
 from controllers.viewCategoryCtrl import ViewCategoryCtrl
 from controllers.updateCategoryCtrl import UpdateCategoryCtrl
 from controllers.suspendCategoryCtrl import SuspendCategoryCtrl
+from controllers.searchCategoryCtrl import SearchCategoryCtrl
 
 import os
 
@@ -65,6 +66,7 @@ createCategoryCtrl = CreateCategoryCtrl()
 viewCategoryCtrl = ViewCategoryCtrl()
 updateCategoryCtrl = UpdateCategoryCtrl()
 suspendCategoryCtrl = SuspendCategoryCtrl()
+searchCategoryCtrl  = SearchCategoryCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -672,6 +674,22 @@ def suspendCategory(category_id):
         flash(f"Category '{category.title}' suspended successfully", 'success')
         
     return redirect(url_for('listCategories'))
+
+@app.route('/categories/search')
+@require_login
+def searchCategories():
+    """Search category"""
+    keyword = request.args.get('keyword', '')
+
+    current_user = auth_controller.get_current_user()
+    user_profile = current_user.user_profile.profile_name if current_user else None
+
+    categories = searchCategoryCtrl.searchCategory(keyword or None, None)
+
+    return render_template('categories/search.html',
+                           categories=categories,
+                           keyword=keyword,
+                           user_profile=user_profile)
 
 @app.route('/category/<int:category_id>/activate', methods=['POST'])
 @require_login
