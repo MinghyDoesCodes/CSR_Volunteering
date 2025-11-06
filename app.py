@@ -4,6 +4,7 @@ Main application file for the web portal
 """
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from datetime import datetime
 from database.db_config import init_database, get_session
 from controllers.authentication_controller import AuthenticationController
 from controllers.user_account_controller import UserAccountController
@@ -31,6 +32,7 @@ from controllers.createCategoryCtrl import CreateCategoryCtrl
 from controllers.viewCategoryCtrl import ViewCategoryCtrl
 from controllers.updateCategoryCtrl import UpdateCategoryCtrl
 from controllers.suspendCategoryCtrl import SuspendCategoryCtrl
+from controllers.createDailyReportCtrl import CreateDailyReportCtrl
 
 import os
 
@@ -65,6 +67,7 @@ createCategoryCtrl = CreateCategoryCtrl()
 viewCategoryCtrl = ViewCategoryCtrl()
 updateCategoryCtrl = UpdateCategoryCtrl()
 suspendCategoryCtrl = SuspendCategoryCtrl()
+createDailyReportCtrl = CreateDailyReportCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -690,6 +693,27 @@ def activateCategory(category_id):
     elif result == 2:
         flash(f"Category '{category.title}' activated successfully", 'success')
     return redirect(url_for('listCategories'))
+
+# ==================== REPORTS ====================
+
+@app.route('/reports/daily')
+@require_login
+def createDailyReport():
+    """Generate daily report"""
+    # Get optional date parameter (defaults to today)
+    date_param = request.args.get('date', None)
+    report_date = None
+    if date_param:
+        try:
+            report_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+        except ValueError:
+            flash("Invalid date format. Use YYYY-MM-DD", 'error')
+            report_date = None
+    
+    # Generate report
+    report_data = createDailyReportCtrl.createDailyReport(report_date)
+    
+    return render_template('reports/daily.html', report=report_data)
 
 # ==================== COMPLETED MATCH HISTORY ====================
 
