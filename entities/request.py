@@ -114,6 +114,9 @@ class Request(Base):
         
         # Apply status filter
         if status:
-            query = query.filter_by(status=status)
+            # Normalize status to match database format (capitalize first letter)
+            # Form sends "pending" or "completed", but DB stores "Pending" or "Completed"
+            normalized_status = status.capitalize()
+            query = query.filter_by(status=normalized_status)
         
         return query.all()
