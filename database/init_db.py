@@ -149,15 +149,15 @@ def seed_initial_data():
 
         # Create Categories
         categories = [
-            Category(created_by=4, title="Medical Assistance", description="Bringing PIN to clinic/hospital, collecting medication, accompanying to appointments"),
-            Category(created_by=4, title="Mobility Support", description="Requesting wheelchairs, assistance with mobility aids, transporting PINs to events"),
-            Category(created_by=4, title="Household Assistance", description="Cleaning, minor repairs, grocery shopping, cooking"),
-            Category(created_by=4, title="Elderly Care", description="Companionship, reading sessions, help with technology for seniors"),
-            Category(created_by=4, title="Childcare Support", description="Babysitting, helping children with homework, escorting children to school"),
-            Category(created_by=4, title="Food & Essentials Aid", description="Delivering meals, distributing food packs or hygiene kits"),
-            Category(created_by=4, title="Community Events", description="Helping to organize charity drives, community clean-ups"),
-            Category(created_by=4, title="Environmental Projects", description="Tree planting, recycling drives, community garden maintenance"),
-            Category(created_by=4, title="Miscellaneous", description="For requests that do not fit into other categories"),
+            Category(created_by=4, title="Medical Assistance", description="Bringing PIN to clinic/hospital, collecting medication, accompanying to appointments",is_active=True),
+            Category(created_by=4, title="Mobility Support", description="Requesting wheelchairs, assistance with mobility aids, transporting PINs to events",is_active=True),
+            Category(created_by=4, title="Household Assistance", description="Cleaning, minor repairs, grocery shopping, cooking",is_active=True),
+            Category(created_by=4, title="Elderly Care", description="Companionship, reading sessions, help with technology for seniors",is_active=True),
+            Category(created_by=4, title="Childcare Support", description="Babysitting, helping children with homework, escorting children to school",is_active=True),
+            Category(created_by=4, title="Food & Essentials Aid", description="Delivering meals, distributing food packs or hygiene kits",is_active=True),
+            Category(created_by=4, title="Community Events", description="Helping to organize charity drives, community clean-ups",is_active=True),
+            Category(created_by=4, title="Environmental Projects", description="Tree planting, recycling drives, community garden maintenance",is_active=True),
+            Category(created_by=4, title="Miscellaneous", description="For requests that do not fit into other categories",is_active=True),
         ]
         categories_created = 0
         for category in categories:
@@ -180,6 +180,11 @@ def seed_initial_data():
 
 
 if __name__ == "__main__":
+    
+    #from database.db_config import Base, engine
+
+    #Base.metadata.drop_all(engine)  # Drops all tables
+    #Base.metadata.create_all(engine)  # Recreates tables with new columns
     print("Initializing database...")
     init_database()
     print("\nSeeding initial data...")

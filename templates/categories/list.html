@@ -5,7 +5,8 @@
 {% block content %}
 <div class="page-header">
     <h1>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="display: inline-block; vertical-align: middle; margin-right: 8px;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="6" x2="12" y2="12"></line>
             <line x1="12" y1="12" x2="16" y2="14"></line>
@@ -14,7 +15,8 @@
     </h1>
     <div class="page-actions">
         <a href="{{ url_for('createCategory') }}" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="display: inline-block; vertical-align: middle; margin-right: 4px;">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
@@ -30,27 +32,64 @@
                 <th>ID</th>
                 <th>Title</th>
                 <th>Description</th>
-                <th>Created At</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% if categories %}
-                {% for category in categories %}
-                <tr>
-                    <td>{{ category.category_id }}</td>
-                    <td><strong>{{ category.title }}</strong></td>
-                    <td>{{ category.description }}</td>
-                    <td>{{ category.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>
-                        <a href="{{ url_for('viewCategory', category_id=category.category_id) }}" class="btn btn-sm btn-info">View</a>
+            {% for category in categories %}
+            <tr>
+                <td>{{ category.category_id }}</td>
+                <td><strong>{{ category.title }}</strong></td>
+                <td>{{ category.description }}</td>
+                <td>
+                        {% if category.is_active %}
+                            <span class="badge badge-success">Active</span>
+                        {% else %}
+                            <span class="badge badge-danger">Suspended</span>
+                        {% endif %}
                     </td>
-                </tr>
-                {% endfor %}
+                <td>
+                    <a href="{{ url_for('viewCategory', category_id=category.category_id) }}"
+                        class="btn btn-sm btn-info">View</a>
+                    <a href="{{ url_for('updateCategory', category_id=category.category_id) }}"
+                        class="btn btn-sm btn-warning">Edit</a>
+                    {% if category.is_active %}
+                        <form method="POST" action="{{ url_for('suspendCategory', category_id=category.category_id) }}"
+                            style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Are you sure you want to suspend this account?')">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2"
+                                    style="display: inline-block; vertical-align: middle; margin-right: 2px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                                Suspend
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('activateCategory', category_id=category.category_id) }}"
+                            style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2"
+                                    style="display: inline-block; vertical-align: middle; margin-right: 2px;">
+                                    <polyline points="20,6 9,17 4,12"></polyline>
+                                </svg>
+                                Activate
+                            </button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
             {% else %}
-                <tr>
-                    <td colspan="5">No categories found.</td>
-                </tr>
+            <tr>
+                <td colspan="5">No categories found.</td>
+            </tr>
             {% endif %}
         </tbody>
     </table>

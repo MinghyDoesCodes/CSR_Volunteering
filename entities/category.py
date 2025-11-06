@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey,Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.db_config import Base
@@ -22,6 +22,9 @@ class Category(Base):
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)
     status = Column(String(50), default='Active', nullable=False)
+    
+    # Account status
+    is_active = Column(Boolean, default=True, nullable=False)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.now, nullable=False)
@@ -57,3 +60,30 @@ class Category(Base):
         session.add(category)
         session.commit()
         return 1 # Success
+    
+    def updateCategory(self,session, title, description, status):
+        
+        """Update request details"""
+        self.title = title
+        self.description = description
+        self.status = status
+        session.commit()
+        return 1
+    
+    def suspendCategory(self, session):
+        """Suspend the category"""
+        if not self.is_active:
+            return 1  # Already suspended
+        self.is_active = False
+        self.updated_at = datetime.now()
+        session.commit()
+        return 2 # Successfully suspended
+    
+    def activateCategory(self, session):
+        """Activate the category"""
+        if self.is_active:
+            return 1  # Already active
+        self.is_active = True
+        self.updated_at = datetime.now()
+        session.commit()
+        return 2 # Successfully activated

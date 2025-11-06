@@ -29,6 +29,8 @@ from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
 from controllers.createCategoryCtrl import CreateCategoryCtrl
 from controllers.viewCategoryCtrl import ViewCategoryCtrl
+from controllers.updateCategoryCtrl import UpdateCategoryCtrl
+from controllers.suspendCategoryCtrl import SuspendCategoryCtrl
 
 import os
 
@@ -61,6 +63,8 @@ viewHistoryCtrl = ViewHistoryCtrl()
 pin_boundary = PINBoundary()
 createCategoryCtrl = CreateCategoryCtrl()
 viewCategoryCtrl = ViewCategoryCtrl()
+updateCategoryCtrl = UpdateCategoryCtrl()
+suspendCategoryCtrl = SuspendCategoryCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -620,6 +624,62 @@ def viewCategory(category_id):
         return redirect(url_for('listCategories'))
     
     return render_template('categories/view.html', category=category)
+
+@app.route('/category/<int:category_id>/edit', methods=['GET', 'POST'])
+@require_login
+def updateCategory(category_id):
+    """Update category details"""
+    if request.method == 'POST':
+        title = request.form.get('category_title')
+        description = request.form.get('category_description')
+        status = request.form.get('category_status')
+        
+        # Create an instance of the controller
+        ctrl = UpdateCategoryCtrl()
+        result = ctrl.updateCategory(
+            categoryID=category_id,
+            title=title,
+            description=description,
+            status=status
+        )
+        
+        if result == 0:
+            flash(f"Category with ID {category_id} not found", 'error')
+        elif result == 1:
+            flash("Category updated successfully", 'success')
+            return redirect(url_for('listCategories'))
+
+    category = viewCategoryCtrl.viewCategory(category_id)
+    if not category:
+        flash(f"Category with ID {category_id} not found", 'error')
+        return redirect(url_for('listCategories'))
+
+    return render_template('categories/edit.html', category=category)
+
+@app.route('/category/<int:category_id>/suspend', methods=['POST'])
+@require_login
+def suspendCategory(category_id):
+    result = suspendCategoryCtrl.suspendCategory(categoryID = category_id   )
+    if result == 0:
+        flash(f"User account with ID {category_id} not found", 'error')
+    elif result == 1:
+        flash("User account is already suspended", 'info')
+    elif result == 2:
+        flash("User account suspended successfully", 'success')
+        
+    return redirect(url_for('listCategories', category_id = category_id))
+
+@app.route('/category/<int:category_id>/activate', methods=['POST'])
+@require_login
+def activateCategory(category_id):
+    result = suspendCategoryCtrl.activateCategory(categoryID = category_id)
+    if result == 0:
+        flash(f"User account with ID {category_id} not found", 'error')
+    elif result == 1:
+        flash("User account is already active", 'info')
+    elif result == 2:
+        flash("User account activated successfully", 'success')
+    return redirect(url_for('listCategories', category_id = category_id))
 
 # ==================== COMPLETED MATCH HISTORY ====================
 

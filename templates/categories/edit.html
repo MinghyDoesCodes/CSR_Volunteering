@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Request - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"></path>
+        </svg>
+        Edit Category
+    </h1>
+    <a href="{{ url_for('listCategories') }}" class="btn btn-secondary">← Back to Details</a>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('updateCategory', category_id=category.category_id) }}" class="form">
+        <div class="form-group">
+            <label for="category_title">Category Name <span class="required">*</span></label>
+            <input type="text" id="category_title" name="category_title" class="form-control" value="{{ category.title }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="category_description">Description <span class="required">*</span></label>
+            <textarea id="category_description" name="category_description" class="form-control" rows="4" required>{{ category.description }}</textarea>
+        </div>
+
+        <select name="category_status" class="form-control" required>
+            <option value="active" {% if category.status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if category.status == 'Suspended' %}selected{% endif %}>Inactive</option>
+        </select>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('viewCategory', category_id=category.category_id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
