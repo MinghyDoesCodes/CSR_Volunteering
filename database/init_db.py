@@ -147,17 +147,25 @@ def seed_initial_data():
         else:
             print("✓ Default Platform Manager account already exists")
 
-        # Create Categories
+        # Create Categories (created by Platform Manager)
+        # Get Platform Manager account for created_by field
+        pm_account = session.query(UserAccount).filter_by(username="pm").first()
+        if not pm_account:
+            # Fallback to admin if PM doesn't exist yet
+            pm_account = session.query(UserAccount).filter_by(username="admin").first()
+        
+        pm_user_id = pm_account.id if pm_account else 1  # Fallback to ID 1 if no user found
+        
         categories = [
-            Category(created_by=4, title="Medical Assistance", description="Bringing PIN to clinic/hospital, collecting medication, accompanying to appointments",is_active=True),
-            Category(created_by=4, title="Mobility Support", description="Requesting wheelchairs, assistance with mobility aids, transporting PINs to events",is_active=True),
-            Category(created_by=4, title="Household Assistance", description="Cleaning, minor repairs, grocery shopping, cooking",is_active=True),
-            Category(created_by=4, title="Elderly Care", description="Companionship, reading sessions, help with technology for seniors",is_active=True),
-            Category(created_by=4, title="Childcare Support", description="Babysitting, helping children with homework, escorting children to school",is_active=True),
-            Category(created_by=4, title="Food & Essentials Aid", description="Delivering meals, distributing food packs or hygiene kits",is_active=True),
-            Category(created_by=4, title="Community Events", description="Helping to organize charity drives, community clean-ups",is_active=True),
-            Category(created_by=4, title="Environmental Projects", description="Tree planting, recycling drives, community garden maintenance",is_active=True),
-            Category(created_by=4, title="Miscellaneous", description="For requests that do not fit into other categories",is_active=True),
+            Category(created_by=pm_user_id, title="Medical Assistance", description="Bringing PIN to clinic/hospital, collecting medication, accompanying to appointments",is_active=True),
+            Category(created_by=pm_user_id, title="Mobility Support", description="Requesting wheelchairs, assistance with mobility aids, transporting PINs to events",is_active=True),
+            Category(created_by=pm_user_id, title="Household Assistance", description="Cleaning, minor repairs, grocery shopping, cooking",is_active=True),
+            Category(created_by=pm_user_id, title="Elderly Care", description="Companionship, reading sessions, help with technology for seniors",is_active=True),
+            Category(created_by=pm_user_id, title="Childcare Support", description="Babysitting, helping children with homework, escorting children to school",is_active=True),
+            Category(created_by=pm_user_id, title="Food & Essentials Aid", description="Delivering meals, distributing food packs or hygiene kits",is_active=True),
+            Category(created_by=pm_user_id, title="Community Events", description="Helping to organize charity drives, community clean-ups",is_active=True),
+            Category(created_by=pm_user_id, title="Environmental Projects", description="Tree planting, recycling drives, community garden maintenance",is_active=True),
+            Category(created_by=pm_user_id, title="Miscellaneous", description="For requests that do not fit into other categories",is_active=True),
         ]
         categories_created = 0
         for category in categories:

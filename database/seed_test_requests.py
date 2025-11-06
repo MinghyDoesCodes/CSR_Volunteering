@@ -38,52 +38,76 @@ def generate_test_requests():
         
         print(f"✓ Found PIN account: {pin_account.username} (ID: {pin_account.id})")
         
-        # Request templates for variety
+        # Get all active categories and create a mapping by title
+        from entities.category import Category
+        categories = session.query(Category).filter_by(is_active=True).all()
+        
+        if not categories:
+            print("✗ No active categories found. Please create categories first.")
+            print("  Run database initialization to create default categories.")
+            return
+        
+        # Create a mapping from category title to category_id
+        category_map = {cat.title: cat.category_id for cat in categories}
+        
+        # Verify all required categories exist
+        required_categories = [
+            "Medical Assistance", "Mobility Support", "Household Assistance",
+            "Elderly Care", "Childcare Support", "Food & Essentials Aid",
+            "Community Events", "Environmental Projects", "Miscellaneous"
+        ]
+        
+        missing_categories = [cat for cat in required_categories if cat not in category_map]
+        if missing_categories:
+            print(f"⚠️  Warning: Some categories are missing: {', '.join(missing_categories)}")
+            print("  Requests will be assigned to available categories only.")
+        
+        # Request templates for variety (using category titles instead of IDs)
         request_templates = [
-            # category_id = 1 → Medical Assistance
-            ("Transportation to medical appointment", "Need a ride to the hospital for my check-up", 1),
+            # Medical Assistance
+            ("Transportation to medical appointment", "Need a ride to the hospital for my check-up", "Medical Assistance"),
             
-            # category_id = 2 → Mobility Support
-            ("Need help moving furniture", "Looking for volunteers to help move heavy furniture to a new apartment", 2),
-            ("Help moving boxes", "Need assistance moving boxes to storage", 2),
-            ("Moving assistance needed", "Can someone help me move my belongings this weekend?", 2),
+            # Mobility Support
+            ("Need help moving furniture", "Looking for volunteers to help move heavy furniture to a new apartment", "Mobility Support"),
+            ("Help moving boxes", "Need assistance moving boxes to storage", "Mobility Support"),
+            ("Moving assistance needed", "Can someone help me move my belongings this weekend?", "Mobility Support"),
             
-            # category_id = 3 → Household Assistance
-            ("Home repairs needed", "Need help fixing a leaky faucet and broken door", 3),
-            ("Gardening assistance", "Looking for help with yard work and gardening", 3),
-            ("Cleaning help needed", "Need assistance with deep cleaning my apartment", 3),
-            ("Furniture assembly", "Help needed to assemble IKEA furniture", 3),
-            ("Painting assistance", "Looking for volunteers to help paint a room", 3),
-            ("Laundry help", "Need assistance with laundry", 3),
+            # Household Assistance
+            ("Home repairs needed", "Need help fixing a leaky faucet and broken door", "Household Assistance"),
+            ("Gardening assistance", "Looking for help with yard work and gardening", "Household Assistance"),
+            ("Cleaning help needed", "Need assistance with deep cleaning my apartment", "Household Assistance"),
+            ("Furniture assembly", "Help needed to assemble IKEA furniture", "Household Assistance"),
+            ("Painting assistance", "Looking for volunteers to help paint a room", "Household Assistance"),
+            ("Laundry help", "Need assistance with laundry", "Household Assistance"),
             
-            # category_id = 4 → Elderly Care
-            ("Companionship needed", "Looking for someone to visit and chat", 4),
-            ("Elderly care assistance", "Need help with daily tasks", 4),
-            ("Reading assistance", "Need someone to read documents for me", 4),
-            ("Phone assistance", "Help needed to learn how to use my smartphone", 4),
+            # Elderly Care
+            ("Companionship needed", "Looking for someone to visit and chat", "Elderly Care"),
+            ("Elderly care assistance", "Need help with daily tasks", "Elderly Care"),
+            ("Reading assistance", "Need someone to read documents for me", "Elderly Care"),
+            ("Phone assistance", "Help needed to learn how to use my smartphone", "Elderly Care"),
             
-            # category_id = 5 → Childcare Support
-            ("Childcare assistance", "Looking for temporary childcare help", 5),
+            # Childcare Support
+            ("Childcare assistance", "Looking for temporary childcare help", "Childcare Support"),
             
-            # category_id = 6 → Food & Essentials Aid
-            ("Meal preparation help", "Need help preparing meals for the week", 6),
-            ("Food delivery assistance", "Looking for help getting groceries", 6),
-            ("Cooking assistance", "Need someone to teach basic cooking skills", 6),
-            ("Shopping assistance", "Help needed with grocery shopping", 6),
+            # Food & Essentials Aid
+            ("Meal preparation help", "Need help preparing meals for the week", "Food & Essentials Aid"),
+            ("Food delivery assistance", "Looking for help getting groceries", "Food & Essentials Aid"),
+            ("Cooking assistance", "Need someone to teach basic cooking skills", "Food & Essentials Aid"),
+            ("Shopping assistance", "Help needed with grocery shopping", "Food & Essentials Aid"),
             
-            # category_id = 7 → Community Events
-            ("Event setup help", "Need volunteers for community event setup", 7),
+            # Community Events
+            ("Event setup help", "Need volunteers for community event setup", "Community Events"),
             
-            # category_id = 8 → Environmental Projects
-            ("Gardening assistance", "Looking for help with yard work and gardening", 8),
+            # Environmental Projects
+            ("Gardening assistance", "Looking for help with yard work and gardening", "Environmental Projects"),
             
-            # category_id = 9 → Miscellaneous
-            ("Document help", "Need assistance filling out forms", 9),
-            ("Tech support", "Need assistance with my laptop issues", 9),
-            ("Computer help needed", "Need help setting up my computer and internet", 9),
-            ("Language learning", "Need assistance learning English", 9),
-            ("Computer skills training", "Want to learn basic computer skills", 9),
-            ("Pet care help", "Need someone to walk my dog while I'm sick", 9),
+            # Miscellaneous
+            ("Document help", "Need assistance filling out forms", "Miscellaneous"),
+            ("Tech support", "Need assistance with my laptop issues", "Miscellaneous"),
+            ("Computer help needed", "Need help setting up my computer and internet", "Miscellaneous"),
+            ("Language learning", "Need assistance learning English", "Miscellaneous"),
+            ("Computer skills training", "Want to learn basic computer skills", "Miscellaneous"),
+            ("Pet care help", "Need someone to walk my dog while I'm sick", "Miscellaneous"),
         ]
         
         # Status options - all requests start as Pending (newly submitted)
@@ -95,7 +119,16 @@ def generate_test_requests():
         
         for i in range(120):
             # Randomly select a request template
-            title_template, desc_template, categoryID = random.choice(request_templates)
+            title_template, desc_template, category_title = random.choice(request_templates)
+            
+            # Get category_id from the mapping (fallback to first available category if not found)
+            category_id = category_map.get(category_title)
+            if not category_id:
+                # If category doesn't exist, use the first available category
+                category_id = categories[0].category_id if categories else None
+                if not category_id:
+                    print("✗ No categories available. Cannot create requests.")
+                    return
             
             # Add variety to titles
             title_variations = [
@@ -125,7 +158,7 @@ def generate_test_requests():
             request = Request(
                 user_account_id=pin_account.id,  # Created by default PIN user
                 title=title,
-                category_id = categoryID,
+                category_id=category_id,  # Use dynamically resolved category_id
                 description=description,
                 status=status,
                 created_at=created_at,

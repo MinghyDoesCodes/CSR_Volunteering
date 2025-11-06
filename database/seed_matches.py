@@ -39,8 +39,11 @@ def seed_completed_matches():
             print("✗ No CSR Rep user found. Please create a CSR Rep user account first.")
             return
         
-        # Find requests from the PIN user
-        requests = session.query(Request).filter_by(user_account_id=pin_user.id).limit(5).all()
+        # Find requests from the PIN user (with category relationship loaded)
+        from sqlalchemy.orm import joinedload
+        requests = session.query(Request).options(
+            joinedload(Request.category)
+        ).filter_by(user_account_id=pin_user.id).limit(5).all()
         
         if not requests:
             print("✗ No requests found for PIN user. Please create some requests first.")
@@ -61,6 +64,18 @@ def seed_completed_matches():
                 print(f"  - Match already exists for Request ID {req.request_id}, skipping")
                 continue
             
+            # Get service type from the request's category
+            # If request has a category, use its title; otherwise use "Miscellaneous" as fallback
+            service_type = 'Miscellaneous'  # Default fallback
+            if req.category:
+                service_type = req.category.title
+            elif req.category_id:
+                # If category relationship isn't loaded, query it directly
+                from entities.category import Category
+                category = session.query(Category).filter_by(category_id=req.category_id).first()
+                if category:
+                    service_type = category.title
+            
             # Create completed match
             completed_at = datetime.now() - timedelta(days=i+1)  # Different dates for each
             
@@ -69,7 +84,7 @@ def seed_completed_matches():
                 pin_id=pin_user.id,
                 csr_rep_id=csr_rep.id,
                 status='Completed',
-                service_type='General Assistance',
+                service_type=service_type,  # Use category title from request
                 notes=f'Completed assistance for request: {req.title}',
                 completed_at=completed_at,
                 created_at=completed_at - timedelta(days=2),
@@ -78,7 +93,7 @@ def seed_completed_matches():
             
             session.add(match)
             matches_created += 1
-            print(f"  ✓ Created completed match for Request ID {req.request_id}")
+            print(f"  ✓ Created completed match for Request ID {req.request_id} (Service Type: {service_type})")
         
         if matches_created > 0:
             session.commit()

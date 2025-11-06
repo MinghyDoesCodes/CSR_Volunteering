@@ -370,15 +370,25 @@ class PINBoundary:
         For web interface: Returns dict for template rendering
         For CLI: Use render_list() method instead
         """
-        # Get unique service types from existing matches for dropdown
+        # Get all active categories for the service type dropdown
+        # This allows users to filter by any category, not just what's in existing matches
         from database.db_config import get_session
-        from entities.match import Match
+        from entities.category import Category
         session = get_session()
-        service_types = session.query(Match.service_type).filter(
+        categories = session.query(Category).filter_by(is_active=True).all()
+        service_types = [cat.title for cat in categories] if categories else []
+        
+        # Also include any service types from existing matches that might not be categories
+        # (for backward compatibility with existing data)
+        from entities.match import Match
+        existing_service_types = session.query(Match.service_type).filter(
             Match.service_type.isnot(None),
             Match.service_type != ''
         ).distinct().all()
-        service_types = [st[0] for st in service_types if st[0]]
+        existing_service_types = [st[0] for st in existing_service_types if st[0]]
+        
+        # Combine and deduplicate (categories first, then any additional service types)
+        all_service_types = list(dict.fromkeys(service_types + existing_service_types))
         
         # This returns data structure for template rendering
         # Handles empty state implicitly (template checks total_count == 0)
@@ -387,7 +397,7 @@ class PINBoundary:
             'total_count': total_count,
             'page_meta': page_meta,
             'current_user': current_user,
-            'service_types': service_types,
+            'service_types': all_service_types,
             'filters': filters or {}
         }
     
