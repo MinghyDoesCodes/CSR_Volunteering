@@ -91,13 +91,13 @@ class Category(Base):
         return 2 # Successfully activated
     
     def searchCategory(session, keyword, status):
-        """Search request by keyword and status"""
+        """Search category by keyword and status"""
         query = session.query(Category)
 
         #Apply keyword filter
         if keyword:
             keyword_filter = f"%{keyword}%"
-            query = query = query.filter(
+            query = query.filter(
                 (Category.title.ilike(keyword_filter)) |
                 (Category.description.ilike(keyword_filter))
             )
@@ -105,7 +105,7 @@ class Category(Base):
         #Apply status filter
         if status:
             # Normalize status to match database format (capitalize first letter)
-            # Form sends "pending" or "completed", but DB stores "Pending" or "Completed"
+            # Form sends "active" or "suspended", but DB stores "Active" or "Suspended"
             normalized_status = status.capitalize()
             query = query.filter_by(status=normalized_status)
         
