@@ -5,12 +5,12 @@ Handles all user interactions and displays (CLI-based)
 """
 
 from controllers.authentication_controller import AuthenticationController
-from controllers.createRequestCtrl import CreateRequestCtrl
-from controllers.viewRequestCtrl import ViewRequestCtrl
-from controllers.updateRequestCtrl import UpdateRequestCtrl
-from controllers.deleteRequestCtrl import DeleteRequestCtrl
-from controllers.searchRequestCtrl import SearchRequestCtrl
-from controllers.viewShortlistCountCtrl import ViewShortlistCountCtrl
+from controllers.Request.createRequestCtrl import CreateRequestCtrl
+from controllers.Request.viewRequestCtrl import ViewRequestCtrl
+from controllers.Request.updateRequestCtrl import UpdateRequestCtrl
+from controllers.Request.deleteRequestCtrl import DeleteRequestCtrl
+from controllers.Request.searchRequestCtrl import SearchRequestCtrl
+from controllers.PIN.viewShortlistCountCtrl import ViewShortlistCountCtrl
 from controllers.requestViewCountCtrl import RequestViewCountCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from controllers.completedHistoryCtrl import (

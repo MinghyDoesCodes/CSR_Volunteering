@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, or_
 from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
@@ -52,7 +52,8 @@ class UserAccount(Base):
     
     def login(session, username, password):
         """Authenticate user by username and password"""
-        user = session.query(UserAccount).filter_by(username=username).first()
+        user = session.query(UserAccount).filter_by(
+            username=username).options(joinedload(UserAccount.user_profile)).first()
         if not user:
             raise ValueError("No user found with this username.")
         
@@ -186,6 +187,31 @@ class UserAccount(Base):
         self.updated_at = datetime.now()
         session.commit()
         return 2 # Successfully activated
+    
+    def searchUserAccount(session, keyword, profile_id, is_active):
+        query = session.query(UserAccount)
+
+        # Apply keyword filter (search in multiple fields)
+        if keyword:
+            search_pattern = f"%{keyword}%"
+            query = query.filter(
+                or_(
+                    UserAccount.username.like(search_pattern),
+                    UserAccount.email.like(search_pattern),
+                    UserAccount.first_name.like(search_pattern),
+                    UserAccount.last_name.like(search_pattern)
+                )
+            )
+
+        # Apply profile filter
+        if profile_id:
+            query = query.filter_by(user_profile_id=profile_id)
+
+        # Apply status filter
+        if is_active is not None:
+            query = query.filter_by(is_active=is_active)
+
+        return query.options(joinedload(UserAccount.user_profile)).all()
     
     def __repr__(self):
         """String representation for debugging"""

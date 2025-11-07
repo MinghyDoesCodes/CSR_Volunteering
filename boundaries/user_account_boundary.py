@@ -1,19 +1,11 @@
-# Changed all boundaries to be their own classes instead of 1 class multiple functions
-# Pushed all app.py logic here so app.py can just be an entry point and router
-# Need to check with teacher if boundaries also need to be their own classes too
-# If need, then need to refactor every existing function in app.py to follow this format in this file
-# I will push all these into user_admin_boundary.py and add in the user profile functions
-# The other functions will go into their respective boundary
-
 from flask import render_template, request, redirect, url_for, flash
 from database.db_config import close_session
-from controllers.viewUserAccountCtrl import ViewUserAccountCtrl
-from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
-from controllers.createUserAccountCtrl import CreateUserAccountCtrl
-from controllers.updateUserAccountCtrl import UpdateUserAccountCtrl
-from controllers.suspendUserAccountCtrl import SuspendUserAccountCtrl
-from controllers.searchUserAccountController import SearchUserAccountController
-
+from controllers.UserAdmin.UserAccount.viewUserAccountCtrl import ViewUserAccountCtrl
+from controllers.UserAdmin.UserProfile.viewUserProfileCtrl import ViewUserProfileCtrl
+from controllers.UserAdmin.UserAccount.createUserAccountCtrl import CreateUserAccountCtrl
+from controllers.UserAdmin.UserAccount.updateUserAccountCtrl import UpdateUserAccountCtrl
+from controllers.UserAdmin.UserAccount.suspendUserAccountCtrl import SuspendUserAccountCtrl
+from controllers.UserAdmin.UserAccount.searchUserAccountController import SearchUserAccountController
 
 class ListUserAccountUI:
     def __init__(self):
@@ -97,7 +89,6 @@ class UpdateUserAccountUI:
                 phoneNumber = phone_number if phone_number else None,
                 userProfileID = int(user_profile_id) if user_profile_id else None
             )
-
             close_session()
 
             if result == 0:
@@ -114,7 +105,7 @@ class UpdateUserAccountUI:
             
         # Get user details
         user = self.vc.viewAccount(user_id)
-        
+        close_session()
         if not user:  # Not found
             flash(f"User account with ID {user_id} not found", 'error')
             return redirect(url_for('list_user_accounts'))
@@ -173,8 +164,9 @@ class SearchUserAccountUI:
             profile_id,
             is_active
         )
-
+        close_session()
         profiles = self.p.getAllProfiles()
+        close_session()
         return render_template('user_accounts/search.html',
                                users = users,
                                profiles = profiles,

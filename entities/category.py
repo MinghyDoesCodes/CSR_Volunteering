@@ -67,6 +67,10 @@ class Category(Base):
         self.title = title
         self.description = description
         self.status = status
+        if status == 'Active':
+            self.is_active = True
+        else:
+            self.is_active = False        
         session.commit()
         return 1
     

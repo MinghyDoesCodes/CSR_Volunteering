@@ -1,152 +1,143 @@
-"""
-BOUNDARY: PlatformManagerBoundary
-User interface for Platform Manager operations
-Handles all user interactions and displays (Web-based)
-"""
-
-from controllers.createCategoryCtrl import CreateCategoryCtrl
-from controllers.viewCategoryCtrl import ViewCategoryCtrl
-from controllers.updateCategoryCtrl import UpdateCategoryCtrl
-from controllers.suspendCategoryCtrl import SuspendCategoryCtrl
-from controllers.createDailyReportCtrl import CreateDailyReportCtrl
+from flask import render_template, request, redirect, url_for, flash
+from database.db_config import close_session
 from controllers.authentication_controller import AuthenticationController
+from controllers.Category.createCategoryCtrl import CreateCategoryCtrl
+from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
+from controllers.Category.updateCategoryCtrl import UpdateCategoryCtrl
+from controllers.Category.suspendCategoryCtrl import SuspendCategoryCtrl
+from controllers.Category.searchCategoryCtrl import SearchCategoryCtrl
+from controllers.createDailyReportCtrl import CreateDailyReportCtrl
 
-
-class PlatformManagerBoundary:
-    """
-    Boundary class for Platform Manager interface
-    
-    This is the user interface layer for Platform Manager users
-    to interact with category management and reporting operations.
-    """
-    
+class ListCategoryUI:
     def __init__(self):
-        self.auth_controller = AuthenticationController()
-        self.create_category_ctrl = CreateCategoryCtrl()
-        self.view_category_ctrl = ViewCategoryCtrl()
-        self.update_category_ctrl = UpdateCategoryCtrl()
-        self.suspend_category_ctrl = SuspendCategoryCtrl()
-        self.create_daily_report_ctrl = CreateDailyReportCtrl()
-    
-    # ==================== CATEGORY MANAGEMENT ====================
-    
-    def handle_create_category(self, user_id, title, description):
-        """
-        Handle creating a new category
-        
-        Args:
-            user_id (int): ID of the Platform Manager creating the category
-            title (str): Category title
-            description (str): Category description
-            
-        Returns:
-            int: Result code (0: User does not exist, 1: Success)
-        """
-        return self.create_category_ctrl.createCategory(
-            userID=user_id,
-            title=title,
-            description=description
-        )
-    
-    def handle_view_category(self, category_id):
-        """
-        Handle viewing a category
-        
-        Args:
-            category_id (int): ID of the category to view
-            
-        Returns:
-            Category: Category object or None if not found
-        """
-        return self.view_category_ctrl.viewCategory(category_id)
-    
-    def handle_list_categories(self):
-        """
-        Handle listing all categories
-        
-        Returns:
-            list: List of all categories
-        """
-        return self.view_category_ctrl.listCategories()
-    
-    def handle_list_active_categories(self):
-        """
-        Handle listing active categories
-        
-        Returns:
-            list: List of active categories
-        """
-        return self.view_category_ctrl.listActiveCategories()
-    
-    def handle_update_category(self, category_id, title, description, status):
-        """
-        Handle updating a category
-        
-        Args:
-            category_id (int): ID of the category to update
-            title (str): New title (optional)
-            description (str): New description (optional)
-            status (str): New status (optional)
-            
-        Returns:
-            int: Result code (0: Not found, 1: Success)
-        """
-        return self.update_category_ctrl.updateCategory(
-            categoryID=category_id,
-            title=title,
-            description=description,
-            status=status
-        )
-    
-    def handle_suspend_category(self, category_id):
-        """
-        Handle suspending a category
-        
-        Args:
-            category_id (int): ID of the category to suspend
-            
-        Returns:
-            int: Result code (0: Not found, 1: Already suspended, 2: Success)
-        """
-        return self.suspend_category_ctrl.suspendCategory(categoryID=category_id)
-    
-    def handle_activate_category(self, category_id):
-        """
-        Handle activating a category
-        
-        Args:
-            category_id (int): ID of the category to activate
-            
-        Returns:
-            int: Result code (0: Not found, 1: Already active, 2: Success)
-        """
-        return self.suspend_category_ctrl.activateCategory(categoryID=category_id)
-    
-    # ==================== REPORT GENERATION ====================
-    
-    def handle_create_daily_report(self, report_date=None):
-        """
-        Handle creating a daily report
-        
-        Args:
-            report_date (date, optional): Date for the report. Defaults to today.
-            
-        Returns:
-            dict: Report data containing statistics, changes, and category breakdown
-        """
-        return self.create_daily_report_ctrl.createDailyReport(report_date)
-    
-    def render_daily_report(self, report_data):
-        """
-        Prepare data for rendering the daily report template
-        
-        Args:
-            report_data (dict): Report data from controller
-            
-        Returns:
-            dict: Data structure for template rendering
-        """
-        return {
-            'report': report_data
-        }
+        self.c = ViewCategoryCtrl()
 
+    def DisplayPage(self):
+        categories = self.c.listCategories()
+        close_session()
+        return render_template('categories/list.html', categories=categories)
+
+class CreateCategoryUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = CreateCategoryCtrl()
+
+    def createCategory(self, request):
+        if request.method == 'POST':
+            user_id = self.a.get_current_user().id
+            title = request.form.get('category_title')
+            description = request.form.get('category_description')
+
+            result = self.c.createCategory(
+                userID=user_id,
+                title=title,
+                description=description
+            )
+            close_session()
+            if result == 0:
+                flash("User does not exist", 'error')
+            elif result == 1:
+                flash("Category created successfully", 'success')
+                return redirect(url_for('listCategories'))
+        
+        return render_template('categories/create.html')
+
+class ViewCategoryUI:
+    def __init__(self):
+        self.c = ViewCategoryCtrl()
+
+    def viewCategory(self, category_id):
+        category = self.c.viewCategory(category_id)
+        if not category:  # Not found
+            flash(f"Category with ID {category_id} not found", 'error')
+            return redirect(url_for('listCategories'))
+        
+        return render_template('categories/view.html', category=category)
+    
+class UpdateCategoryUI:
+    def __init__(self):
+        self.c = UpdateCategoryCtrl()
+        self.v = ViewCategoryCtrl()
+
+    def onClick(self, category_id):
+        if request.method == 'POST':
+            title = request.form.get('category_title')
+            description = request.form.get('category_description')
+            status = request.form.get('category_status')
+
+            result = self.c.updateCategory(
+                categoryID=category_id,
+                title=title,
+                description=description,
+                status=status
+            )
+
+            if result == 0:
+                flash(f"Category with ID {category_id} not found", 'error')
+            elif result == 1:
+                flash("Category updated successfully", 'success')
+                return redirect(url_for('listCategories'))
+            
+        category = self.v.viewCategory(category_id)
+        if not category:
+            flash(f"Category with ID {category_id} not found", 'error')
+            return redirect(url_for('listCategories'))
+
+        render = render_template('categories/edit.html', category=category)
+        close_session()
+        return render
+    
+class SuspendCategoryUI:
+    def __init__(self):
+        self.c = SuspendCategoryCtrl()
+        self.v = ViewCategoryCtrl()
+
+    def onClick(self, category_id):
+        category = self.v.viewCategory(category_id)
+        if not category:
+            flash(f"Category with ID {category_id} not found", 'error')
+            return redirect(url_for('listCategories'))
+        result = self.c.suspendCategory(category_id)
+        
+        if result == 0:
+            flash(f"Category with ID {category_id} not found", 'error')
+        elif result == 1:
+            flash(f"Category '{category.title}' is already suspended", 'info')
+        elif result == 2:
+            flash(f"Category '{category.title}' suspended successfully", 'success')
+        close_session()
+        return redirect(url_for('listCategories'))
+    
+    def activateCategory(self, category_id):
+        category = self.v.viewCategory(category_id)
+        if not category:
+            flash(f"Category with ID {category_id} not found", 'error')
+            return redirect(url_for('listCategories'))
+        result = self.c.activateCategory(category_id)
+        
+        if result == 0:
+            flash(f"Category with ID {category_id} not found", 'error')
+        elif result == 1:
+            flash(f"Category '{category.title}' is already active", 'info')
+        elif result == 2:
+            flash(f"Category '{category.title}' activated successfully", 'success')
+        close_session()
+        return redirect(url_for('listCategories'))
+    
+class SearchCategoryUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = SearchCategoryCtrl()
+
+    def onClick(self):
+        keyword = request.args.get('keyword', '')
+        current_user = self.a.get_current_user()
+        user_profile = current_user.user_profile.profile_name if current_user else None
+        categories = self.c.searchCategory(keyword or None, None)
+
+        render = render_template('categories/search.html',
+                        categories=categories,
+                        keyword=keyword,
+                        user_profile=user_profile)
+        close_session()
+        return render

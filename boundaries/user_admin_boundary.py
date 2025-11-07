@@ -7,10 +7,10 @@ Handles all user interactions and displays (CLI-based for now)
 from controllers.authentication_controller import AuthenticationController
 from controllers.user_account_controller import UserAccountController
 from controllers.user_profile_controller import UserProfileController
-from controllers.createUserProfileCtrl import CreateUserProfileCtrl
-from controllers.viewUserProfileCtrl import ViewUserProfileCtrl
-from controllers.searchUserAccountController import SearchUserAccountController
-from controllers.searchUserProfileController import SearchUserProfileController
+from controllers.UserAdmin.UserProfile.createUserProfileCtrl import CreateUserProfileCtrl
+from controllers.UserAdmin.UserProfile.viewUserProfileCtrl import ViewUserProfileCtrl
+from controllers.UserAdmin.UserAccount.searchUserAccountController import SearchUserAccountController
+from controllers.UserAdmin.UserProfile.searchUserProfileController import SearchUserProfileController
 
 
 class UserAdminBoundary:

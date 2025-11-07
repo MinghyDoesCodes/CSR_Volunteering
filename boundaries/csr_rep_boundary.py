@@ -5,7 +5,7 @@ Handles all user interactions and displays (CLI-based)
 """
 
 from controllers.authentication_controller import AuthenticationController
-from controllers.viewRequestCtrl import ViewRequestCtrl
+from controllers.Request.viewRequestCtrl import ViewRequestCtrl
 from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 
 

@@ -1,4 +1,5 @@
 import bcrypt
+from flask import session
 from entities.user_account import UserAccount
 from database.db_config import get_session
 
@@ -12,40 +13,28 @@ class AuthenticationController:
         try:
             user = UserAccount.login(self.session, username, password)
             if user:
-                self.current_user = user
+                session['user_id'] = user.id
+                session['username'] = user.username
+                session['user_profile'] = user.user_profile.profile_name
                 return user
         except ValueError as e:
             raise e
     
     def get_current_user(self):
-        """
-        Get the currently logged-in user
+        user_id = session.get('user_id')
+        if not user_id:
+            return None
         
-        Returns:
-            UserAccount or None: The current user object
-        """
-        return self.current_user
+        db = get_session()
+        user = UserAccount.findById(self.session, user_id)
+        return user
     
     def is_logged_in(self):
-        """
-        Check if a user is currently logged in
-        
-        Returns:
-            bool: True if user is logged in
-        """
-        return self.current_user is not None
+        """Check if a user is currently logged in."""
+        return 'user_id' in session
     
     def has_profile(self, profile_name):
-        """
-        Check if current user has a specific profile/role
-        
-        Args:
-            profile_name (str): The profile name to check
-            
-        Returns:
-            bool: True if user has the specified profile
-        """
-        if not self.current_user:
-            return False
-        return self.current_user.user_profile.profile_name == profile_name
+        """Check if the logged-in user has the given profile name."""
+        user_profile = session.get('user_profile')
+        return user_profile == profile_name
 

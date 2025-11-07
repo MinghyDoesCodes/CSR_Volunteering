@@ -1,10 +1,4 @@
-"""
-ENTITY: UserProfile
-Represents a user profile type/role in the system
-Examples: User Admin, Platform Manager, CSR Rep, PIN
-"""
-
-from sqlalchemy import Column, Integer, String, Boolean, Text
+from sqlalchemy import Column, Integer, String, Boolean, Text, or_
 from database.db_config import Base
 
 
@@ -114,3 +108,21 @@ class UserProfile(Base):
         session.commit()
         return True
 
+    def searchUserProfile(session, keyword, is_active):
+        query = session.query(UserProfile)
+
+        # Apply keyword filter
+        if keyword:
+            search_pattern = f"%{keyword}%"
+            query = query.filter(
+                or_(
+                    UserProfile.profile_name.like(search_pattern),
+                    UserProfile.description.like(search_pattern)
+                )
+            )
+
+         # Apply status filter
+        if is_active is not None:
+            query = query.filter_by(is_active=is_active)
+
+        return query.all()
