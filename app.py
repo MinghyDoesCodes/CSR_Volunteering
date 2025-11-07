@@ -44,6 +44,7 @@ from boundaries.platform_manager_boundary import (
     SearchCategoryUI,
     DailyReportUI,
     WeeklyReportUI,
+    MonthlyReportUI,
 )
 
 # Initialize Boundaries
@@ -76,6 +77,7 @@ suspendCategoryUI = SuspendCategoryUI()
 searchCategoryUI = SearchCategoryUI()
 dailyReportUI = DailyReportUI()
 weeklyReportUI = WeeklyReportUI()
+monthlyReportUI = MonthlyReportUI()
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -330,6 +332,12 @@ def createDailyReport():
 @require_login
 def createWeeklyReport():
     return weeklyReportUI.handle_create_weekly_report()
+
+
+@app.route('/reports/monthly')
+@require_login
+def createMonthlyReport():
+    return monthlyReportUI.handle_create_monthly_report()
 
 # ==================== COMPLETED MATCH HISTORY ====================
 
