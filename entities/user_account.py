@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from database.db_config import Base
@@ -69,11 +69,11 @@ class UserAccount(Base):
 
     def findById(session, userID):
         """Fetch a user account by ID"""
-        return session.query(UserAccount).filter_by(id=userID).first()
+        return session.query(UserAccount).filter_by(id=userID).options(joinedload(UserAccount.user_profile)).first()
     
     def getAllAccounts(session):
         """Fetch all user accounts"""
-        return session.query(UserAccount).all()
+        return session.query(UserAccount).options(joinedload(UserAccount.user_profile)).all()
     
     def checkEmailExists(session, email, excludeID=None):
         """Check if an email already exists in the database"""

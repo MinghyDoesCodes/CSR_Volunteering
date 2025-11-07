@@ -46,9 +46,9 @@ class SearchUserAccountController:
             users = query.all()
             
             if not users:
-                return (True, "No user accounts found matching the criteria", [])
+                return None
             
-            return (True, f"Found {len(users)} user account(s)", users)
+            return users
             
         except Exception as e:
-            return (False, f"Error searching user accounts: {str(e)}", []) 
+            return None

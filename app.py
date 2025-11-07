@@ -37,6 +37,23 @@ from controllers.searchCategoryCtrl import SearchCategoryCtrl
 
 import os
 
+# Testing user_account_boundary
+from boundaries.user_account_boundary import (
+    ListUserAccountUI,
+    CreateUserAccountUI,
+    ViewUserAccountUI,
+    UpdateUserAccountUI,
+    SuspendUserAccountUI,
+    SearchUserAccountUI
+)
+
+listUserUI = ListUserAccountUI()
+createUserUI = CreateUserAccountUI()
+viewUserUI = ViewUserAccountUI()
+updateUserUI = UpdateUserAccountUI()
+suspendUserUI = SuspendUserAccountUI()
+searchUserUI = SearchUserAccountUI()
+
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in production!
@@ -150,158 +167,192 @@ def dashboard():
 
 # ==================== USER ACCOUNT MANAGEMENT ====================
 
+# @app.route('/user-accounts')
+# @require_user_admin
+# def list_user_accounts():
+#     """List all user accounts"""
+#     users = viewUserAccountCtrl.listAccounts()
+#     return render_template('user_accounts/list.html', users=users)
+
 @app.route('/user-accounts')
 @require_user_admin
 def list_user_accounts():
-    """List all user accounts"""
-    users = viewUserAccountCtrl.listAccounts()
-    return render_template('user_accounts/list.html', users=users)
+    return listUserUI.displayPage()
+
+# @app.route('/user-accounts/create', methods=['GET', 'POST'])
+# @require_user_admin
+# def create_user_account():
+#     """Create a new user account"""
+#     if request.method == 'POST':
+#         email = request.form.get('email')
+#         username = request.form.get('username')
+#         first_name = request.form.get('first_name')
+#         last_name = request.form.get('last_name')
+#         phone_number = request.form.get('phone_number')
+#         user_profile_id = request.form.get('user_profile_id')
+#         password = request.form.get('password')
+        
+#         result = createUserAccountCtrl.createAccount(
+#             email, username, first_name, last_name, 
+#             phone_number if phone_number else None,
+#             int(user_profile_id), password
+#         )
+        
+#         if result == 1:
+#             flash("Email already in use", 'error')
+#         elif result == 2:
+#             flash("Username already in use", 'error')
+#         elif result == 3:
+#             flash("Invalid or inactive user profile selected", 'error')
+#         elif result == 4:
+#             flash("User account created successfully", 'success')
+#             return redirect(url_for('list_user_accounts'))
+    
+#     # Get active profiles for dropdown
+#     profiles = profile_controller.get_active_user_profiles()
+#     return render_template('user_accounts/create.html', profiles=profiles)
 
 @app.route('/user-accounts/create', methods=['GET', 'POST'])
 @require_user_admin
 def create_user_account():
-    """Create a new user account"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        username = request.form.get('username')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        phone_number = request.form.get('phone_number')
-        user_profile_id = request.form.get('user_profile_id')
-        password = request.form.get('password')
+    return createUserUI.createUserAccount(request)
+
+# @app.route('/user-accounts/<int:user_id>')
+# @require_user_admin
+# def view_user_account(user_id):
+#     """View user account details"""
+#     user = viewUserAccountCtrl.viewAccount(user_id)
+#     if not user:  # Not found
+#         flash(f"User account with ID {user_id} not found", 'error')
+#         return redirect(url_for('list_user_accounts'))
         
-        result = createUserAccountCtrl.createAccount(
-            email, username, first_name, last_name, 
-            phone_number if phone_number else None,
-            int(user_profile_id), password
-        )
-        
-        if result == 1:
-            flash("Email already in use", 'error')
-        elif result == 2:
-            flash("Username already in use", 'error')
-        elif result == 3:
-            flash("Invalid or inactive user profile selected", 'error')
-        elif result == 4:
-            flash("User account created successfully", 'success')
-            return redirect(url_for('list_user_accounts'))
-    
-    # Get active profiles for dropdown
-    profiles = profile_controller.get_active_user_profiles()
-    return render_template('user_accounts/create.html', profiles=profiles)
+#     return render_template('user_accounts/view.html', user = user)
 
 @app.route('/user-accounts/<int:user_id>')
 @require_user_admin
 def view_user_account(user_id):
-    """View user account details"""
-    user = viewUserAccountCtrl.viewAccount(user_id)
-    if not user:  # Not found
-        flash(f"User account with ID {user_id} not found", 'error')
-        return redirect(url_for('list_user_accounts'))
+    return viewUserUI.viewUserAccount(user_id)
+
+# @app.route('/user-accounts/<int:user_id>/edit', methods=['GET', 'POST'])
+# @require_user_admin
+# def updateUserAccount(user_id):
+#     if request.method == 'POST':
+#         email = request.form.get('email')
+#         userName = request.form.get('username')
+#         first_name = request.form.get('first_name')
+#         last_name = request.form.get('last_name')
+#         phone_number = request.form.get('phone_number')
+#         user_profile_id = request.form.get('user_profile_id')
         
-    return render_template('user_accounts/view.html', user = user)
+#         result = updateUserAccountCtrl.updateAccount(
+#             userID = user_id,
+#             email = email if email else None,
+#             userName = userName if userName else None,
+#             firstName = first_name if first_name else None,
+#             lastName = last_name if last_name else None,
+#             phoneNumber = phone_number if phone_number else None,
+#             userProfileID = int(user_profile_id) if user_profile_id else None
+#         )
+        
+#         if result == 0:
+#             flash(f"User account with ID {user_id} not found", 'error')
+#         elif result == 1:
+#             flash("Email already in use", 'error')
+#         elif result == 2:
+#             flash("Username already in use", 'error')
+#         elif result == 3:
+#             flash("Invalid or inactive user profile selected", 'error')
+#         elif result == 4:
+#             flash("User account updated successfully", 'success')
+#             return redirect(url_for('view_user_account', user_id=user_id))
+    
+#     # Get user details
+#     user = viewUserAccountCtrl.viewAccount(user_id)
+    
+#     if not user:  # Not found
+#         flash(f"User account with ID {user_id} not found", 'error')
+#         return redirect(url_for('list_user_accounts'))
+    
+#     # Get profiles for dropdown
+#     profiles = profile_controller.get_active_user_profiles()
+#     return render_template('user_accounts/edit.html', user = user, profiles = profiles)
 
 @app.route('/user-accounts/<int:user_id>/edit', methods=['GET', 'POST'])
 @require_user_admin
 def updateUserAccount(user_id):
-    if request.method == 'POST':
-        email = request.form.get('email')
-        userName = request.form.get('username')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        phone_number = request.form.get('phone_number')
-        user_profile_id = request.form.get('user_profile_id')
-        
-        result = updateUserAccountCtrl.updateAccount(
-            userID = user_id,
-            email = email if email else None,
-            userName = userName if userName else None,
-            firstName = first_name if first_name else None,
-            lastName = last_name if last_name else None,
-            phoneNumber = phone_number if phone_number else None,
-            userProfileID = int(user_profile_id) if user_profile_id else None
-        )
-        
-        if result == 0:
-            flash(f"User account with ID {user_id} not found", 'error')
-        elif result == 1:
-            flash("Email already in use", 'error')
-        elif result == 2:
-            flash("Username already in use", 'error')
-        elif result == 3:
-            flash("Invalid or inactive user profile selected", 'error')
-        elif result == 4:
-            flash("User account updated successfully", 'success')
-            return redirect(url_for('view_user_account', user_id=user_id))
-    
-    # Get user details
-    user = viewUserAccountCtrl.viewAccount(user_id)
-    
-    if not user:  # Not found
-        flash(f"User account with ID {user_id} not found", 'error')
-        return redirect(url_for('list_user_accounts'))
-    
-    # Get profiles for dropdown
-    profiles = profile_controller.get_active_user_profiles()
-    return render_template('user_accounts/edit.html', user = user, profiles = profiles)
+    return updateUserUI.updateUserAccount(user_id)
 
+# @app.route('/user-accounts/<int:user_id>/suspend', methods=['POST'])
+# @require_user_admin
+# def suspendUserAccount(user_id):
+#     result = suspendUserAccountCtrl.suspendUser(userID = user_id)
+#     if result == 0:
+#         flash(f"User account with ID {user_id} not found", 'error')
+#     elif result == 1:
+#         flash("User account is already suspended", 'info')
+#     elif result == 2:
+#         flash("User account suspended successfully", 'success')
+#         return redirect(url_for('view_user_account', user_id = user_id))
+
+# @app.route('/user-accounts/<int:user_id>/activate', methods=['POST'])
+# @require_user_admin
+# def activateUserAccount(user_id):
+#     result = suspendUserAccountCtrl.activateUser(userID = user_id)
+#     if result == 0:
+#         flash(f"User account with ID {user_id} not found", 'error')
+#     elif result == 1:
+#         flash("User account is already active", 'info')
+#     elif result == 2:
+#         flash("User account activated successfully", 'success')
+#         return redirect(url_for('view_user_account', user_id = user_id))
 
 @app.route('/user-accounts/<int:user_id>/suspend', methods=['POST'])
 @require_user_admin
 def suspendUserAccount(user_id):
-    result = suspendUserAccountCtrl.suspendUser(userID = user_id)
-    if result == 0:
-        flash(f"User account with ID {user_id} not found", 'error')
-    elif result == 1:
-        flash("User account is already suspended", 'info')
-    elif result == 2:
-        flash("User account suspended successfully", 'success')
-        return redirect(url_for('view_user_account', user_id = user_id))
+    return suspendUserUI.suspendUserAccount(user_id)
 
 @app.route('/user-accounts/<int:user_id>/activate', methods=['POST'])
 @require_user_admin
 def activateUserAccount(user_id):
-    result = suspendUserAccountCtrl.activateUser(userID = user_id)
-    if result == 0:
-        flash(f"User account with ID {user_id} not found", 'error')
-    elif result == 1:
-        flash("User account is already active", 'info')
-    elif result == 2:
-        flash("User account activated successfully", 'success')
-        return redirect(url_for('view_user_account', user_id = user_id))
+    return suspendUserUI.activateUserAccount(user_id)
+
+# @app.route('/user-accounts/search')
+# @require_user_admin
+# def search_user_accounts():
+#     """Search user accounts"""
+#     keyword = request.args.get('keyword', '')
+#     profile_id = request.args.get('profile_id', '')
+#     status = request.args.get('status', '')
+    
+#     # Convert to appropriate types
+#     profile_id = int(profile_id) if profile_id else None
+#     is_active = None
+#     if status == 'active':
+#         is_active = True
+#     elif status == 'suspended':
+#         is_active = False
+    
+#     # Search
+#     success, message, users = searchUserAccountController.searchUserAccount(
+#         keyword if keyword else None,
+#         profile_id,
+#         is_active
+#     )
+    
+#     # Get profiles for filter dropdown
+#     profiles = profile_controller.get_all_user_profiles()
+    
+#     return render_template('user_accounts/search.html', 
+#                          users=users, 
+#                          profiles=profiles,
+#                          keyword=keyword,
+#                          selected_profile=profile_id,
+#                          selected_status=status)
 
 @app.route('/user-accounts/search')
 @require_user_admin
 def search_user_accounts():
-    """Search user accounts"""
-    keyword = request.args.get('keyword', '')
-    profile_id = request.args.get('profile_id', '')
-    status = request.args.get('status', '')
-    
-    # Convert to appropriate types
-    profile_id = int(profile_id) if profile_id else None
-    is_active = None
-    if status == 'active':
-        is_active = True
-    elif status == 'suspended':
-        is_active = False
-    
-    # Search
-    success, message, users = searchUserAccountController.searchUserAccount(
-        keyword if keyword else None,
-        profile_id,
-        is_active
-    )
-    
-    # Get profiles for filter dropdown
-    profiles = profile_controller.get_all_user_profiles()
-    
-    return render_template('user_accounts/search.html', 
-                         users=users, 
-                         profiles=profiles,
-                         keyword=keyword,
-                         selected_profile=profile_id,
-                         selected_status=status)
+    return searchUserUI.onClick()
 
 # ==================== USER PROFILE MANAGEMENT ====================
 

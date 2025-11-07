@@ -95,7 +95,7 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="7" class="text-center">No user accounts found matching your search criteria</td>
+                    <td colspan="7" class="text-center">No user accounts found matching your search criteria.</td>
                 </tr>
             {% endif %}
         </tbody>
@@ -103,7 +103,10 @@
 </div>
 
 <div class="table-info">
-    <p>Found: <strong>{{ users|length }}</strong> user account(s)</p>
+    {% if users %}
+        <p>Found: <strong>{{ users|length }}</strong> user account(s).</p>
+    {% else %}
+        <p>No user accounts found matching your search criteria.</p>
+    {% endif %}
 </div>
 {% endblock %}
-

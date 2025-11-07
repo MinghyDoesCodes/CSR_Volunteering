@@ -63,6 +63,14 @@ class UserProfile(Base):
         """Fetch a user profile by ID"""
         return session.query(cls).filter_by(id=profile_id).first()
     
+    def getAllProfiles(session):
+        "Fetch all profiles"
+        return session.query(UserProfile).all()
+    
+    def getActiveProfiles(session):
+        "Fetch active profiles"
+        return session.query(UserProfile).filter_by(is_active = True).all()
+    
     @classmethod
     def checkProfileNameExists(cls, session, profile_name, exclude_id=None):
         """Check if a profile name already exists in the database"""

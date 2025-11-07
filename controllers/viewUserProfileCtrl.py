@@ -10,3 +10,9 @@ class ViewUserProfileCtrl:
         if not profile:
             return None # Not found
         return profile
+    
+    def getActiveProfiles(self):
+        return UP.getActiveProfiles(self.session)
+    
+    def getAllProfiles(self):
+        return UP.getAllProfiles(self.session)
