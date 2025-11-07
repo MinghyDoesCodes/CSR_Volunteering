@@ -7,6 +7,7 @@ from controllers.Category.updateCategoryCtrl import UpdateCategoryCtrl
 from controllers.Category.suspendCategoryCtrl import SuspendCategoryCtrl
 from controllers.Category.searchCategoryCtrl import SearchCategoryCtrl
 from controllers.createDailyReportCtrl import CreateDailyReportCtrl
+from datetime import datetime
 
 class ListCategoryUI:
     def __init__(self):
@@ -141,3 +142,21 @@ class SearchCategoryUI:
                         user_profile=user_profile)
         close_session()
         return render
+
+class DailyReportUI:
+    def __init__(self):
+        self.c = CreateDailyReportCtrl()
+
+    def handle_create_daily_report(self):
+        """Generate daily report"""
+        date_param = request.args.get('date', None)
+        report_date = None
+        if date_param:
+            try:
+                report_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Invalid date format. Use YYYY-MM-DD", 'error')
+                report_date = None
+
+        report_data = self.c.createDailyReport(report_date)
+        return render_template('reports/daily.html', report=report_data)

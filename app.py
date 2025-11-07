@@ -1,11 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from datetime import datetime
 from database.db_config import init_database
 from controllers.authentication_controller import AuthenticationController
 from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
-from controllers.createDailyReportCtrl import CreateDailyReportCtrl
 
 import os
 
@@ -44,6 +42,7 @@ from boundaries.platform_manager_boundary import (
     UpdateCategoryUI,
     SuspendCategoryUI,
     SearchCategoryUI,
+    DailyReportUI,
 )
 
 # Initialize Boundaries
@@ -74,6 +73,7 @@ viewCategoryUI = ViewCategoryUI()
 updateCategoryUI = UpdateCategoryUI()
 suspendCategoryUI = SuspendCategoryUI()
 searchCategoryUI = SearchCategoryUI()
+dailyReportUI = DailyReportUI()
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -83,7 +83,6 @@ app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in
 auth_controller = AuthenticationController()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 pin_boundary = PINBoundary()
-createDailyReportCtrl = CreateDailyReportCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -322,21 +321,7 @@ def searchCategories():
 @app.route('/reports/daily')
 @require_login
 def createDailyReport():
-    """Generate daily report"""
-    # Get optional date parameter (defaults to today)
-    date_param = request.args.get('date', None)
-    report_date = None
-    if date_param:
-        try:
-            report_date = datetime.strptime(date_param, '%Y-%m-%d').date()
-        except ValueError:
-            flash("Invalid date format. Use YYYY-MM-DD", 'error')
-            report_date = None
-    
-    # Generate report
-    report_data = createDailyReportCtrl.createDailyReport(report_date)
-    
-    return render_template('reports/daily.html', report=report_data)
+    return dailyReportUI.handle_create_daily_report()
 
 # ==================== COMPLETED MATCH HISTORY ====================
 
