@@ -7,6 +7,7 @@ from controllers.Category.updateCategoryCtrl import UpdateCategoryCtrl
 from controllers.Category.suspendCategoryCtrl import SuspendCategoryCtrl
 from controllers.Category.searchCategoryCtrl import SearchCategoryCtrl
 from controllers.createDailyReportCtrl import CreateDailyReportCtrl
+from controllers.createWeeklyReportCtrl import CreateWeeklyReportCtrl
 from datetime import datetime
 
 class ListCategoryUI:
@@ -160,3 +161,22 @@ class DailyReportUI:
 
         report_data = self.c.createDailyReport(report_date)
         return render_template('reports/daily.html', report=report_data)
+
+
+class WeeklyReportUI:
+    def __init__(self):
+        self.c = CreateWeeklyReportCtrl()
+
+    def handle_create_weekly_report(self):
+        """Generate weekly report"""
+        date_param = request.args.get('date', None)
+        report_date = None
+        if date_param:
+            try:
+                report_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Invalid date format. Use YYYY-MM-DD", 'error')
+                report_date = None
+
+        report_data = self.c.createWeeklyReport(report_date)
+        return render_template('reports/weekly.html', report=report_data)
