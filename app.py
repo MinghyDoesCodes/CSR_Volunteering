@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from database.db_config import init_database
 from controllers.authentication_controller import AuthenticationController
-from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
+from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
+from controllers.CSR.searchShortlistCtrl import searchShortlistCtrl
 
 import os
 
@@ -87,6 +88,7 @@ app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in
 auth_controller = AuthenticationController()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 pin_boundary = PINBoundary()
+searchShortList = searchShortlistCtrl()
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -282,6 +284,39 @@ def shortlistRequest(request_id):
         flash(message, 'error')
     
     return redirect(url_for('viewRequest', request_id=request_id))
+
+@app.route('/requests/<int:request_id>/removeShortlist', methods=['POST'])
+@require_login
+def removeShortlist(request_id):
+    current_user = auth_controller.get_current_user()
+    result = shortlistRequestCtrl.removeShortlist(request_id, current_user.id)
+
+    if result == 1:
+        flash(f"Request with ID {request_id} is not part of your shortlist", 'error')
+    elif result == 2:
+        flash(f"Request with ID '{request_id}' successfully removed from your shortlist", 'success')
+    else: 
+        flash("Error removing request from shortlist", 'error')
+
+    return redirect(url_for('viewRequest', request_id=request_id))
+
+@app.route('/shortlists')
+@require_login
+def searchShortlists():
+    current_user = auth_controller.get_current_user()
+    if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+        flash("Access denied. Only CSR Reps can view shortlists.", 'error')
+        return redirect(url_for('dashboard'))
+
+    keyword = request.args.get('keyword', '').strip()
+    shortlist = searchShortList.searchShortlist(current_user.id, keyword)
+    print("Requests: ", shortlist)
+
+    return render_template(
+            'shortlist.html',
+            requests=shortlist,
+            keyword=keyword
+        )
 
 # ==================== CATEGORY MANAGEMENT ====================
 

@@ -7,7 +7,7 @@ from controllers.PIN.Request.updateRequestCtrl import UpdateRequestCtrl
 from controllers.PIN.Request.deleteRequestCtrl import DeleteRequestCtrl
 from controllers.PIN.Request.searchRequestCtrl import SearchRequestCtrl
 from controllers.PIN.viewShortlistCountCtrl import ViewShortlistCountCtrl
-from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
+from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
 
 class ListRequestUI:

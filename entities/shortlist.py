@@ -1,12 +1,10 @@
-"""
-ENTITY: Shortlist
-Represents when a CSR Rep shortlists a request
-"""
 from sqlalchemy import Column, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.db_config import Base
-
+from sqlalchemy.orm import joinedload
+from entities.request import Request
+from entities.user_account import UserAccount
 
 class Shortlist(Base):
     """
@@ -75,3 +73,41 @@ class Shortlist(Base):
         session.add(shortlist)
         session.commit()
         return shortlist
+
+    @classmethod
+    def removeShortlist(cls, session, request_id, csr_rep_id):
+        shortlist = session.query(cls).filter_by(
+            request_id=request_id,
+            csr_rep_id=csr_rep_id
+        ).first()
+
+        if not shortlist:
+            return 1 # Not part of shortlist
+        
+        session.delete(shortlist)
+        session.commit()
+        return 2 # Successfully removed from shortlist
+    
+    @classmethod
+    def searchShortlist(cls, session, userID, keyword):
+        query = (
+            session.query(cls)
+            .join(Request, cls.request_id == Request.request_id)
+            .join(UserAccount, Request.user_account_id == UserAccount.id)
+            .filter(cls.csr_rep_id == userID)
+            .options(
+                joinedload(cls.request).joinedload(Request.category),
+                joinedload(cls.request).joinedload(Request.pin)
+            )
+        )
+
+        if keyword:
+            search_pattern = f"%{keyword}%"
+            query = query.filter(
+                (Request.title.ilike(search_pattern)) |
+                (Request.description.ilike(search_pattern)) |
+                (UserAccount.username.ilike(search_pattern)) |
+                (UserAccount.first_name.ilike(search_pattern))
+            )
+
+        return query.all()

@@ -6,7 +6,7 @@ Handles all user interactions and displays (CLI-based)
 
 from controllers.authentication_controller import AuthenticationController
 from controllers.PIN.Request.viewRequestCtrl import ViewRequestCtrl
-from controllers.shortlistRequestCtrl import ShortlistRequestCtrl
+from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
 
 
 class CSRRepBoundary:

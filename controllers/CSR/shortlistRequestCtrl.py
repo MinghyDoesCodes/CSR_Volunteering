@@ -60,3 +60,7 @@ class ShortlistRequestCtrl:
         ).first()
         
         return existing is not None
+    
+    def removeShortlist(self, request_id, csr_rep_id):
+        result = Shortlist.removeShortlist(self.session, request_id, csr_rep_id)
+        return result

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Search Requests - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+        Search Shortlisted Requests
+    </h1>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to dashboard</a>
+</div>
+
+<div class="search-container">
+    <form method="GET" action="{{ url_for('searchShortlists') }}" class="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="keyword">Keyword</label>
+                <input type="text" id="keyword" name="keyword" class="form-control" 
+                       placeholder="Search by request title..." value="{{ keyword }}">
+            </div>
+            <div class="form-group">
+                <label for="category_id">Category</label>
+                    <select id="category_id" name="category_id" class="form-control">
+                        <option value="">All Category</option>
+                        {% for shortlist in requests %}
+                            <option value="{{ shortlist.request.category.category_id }}">{{ shortlist.request.category.title }}</option>
+                        {% endfor %}
+                    </select>   
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                Search
+            </button>
+            <a href="{{ url_for('searchShortlists') }}" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Requested By</th>
+                <th>View Count</th>
+                <th>Status</th>
+                <th>Shortlisted At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if requests %}
+                {% for shortlist in requests %}
+                <tr>
+                    <td>{{ shortlist.request.request_id }}</td>
+                    <td><strong>{{ shortlist.request.title }}</strong></td>
+                    <td>
+                        {% if shortlist.request.pin %}
+                            {{ shortlist.request.pin.username }}
+                        {% else %}
+                            Unknown
+                        {% endif %}
+                    </td>
+                    <td>{{ shortlist.request.view_count }}</td>
+                    <td>
+                        {% if shortlist.request.status == "Pending" %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% elif shortlist.request.status == "Completed" %}
+                            <span class="badge badge-success">Completed</span>
+                        {% else %}
+                            <span class="badge badge-secondary">{{ shortlist.request.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ shortlist.shortlisted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('viewRequest', request_id=shortlist.request.request_id) }}" 
+                            class="btn btn-sm btn-info">View</a>
+                        <form action="{{ url_for('removeShortlist', request_id=shortlist.request.request_id) }}" 
+                                method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Remove this request from your shortlist?');">
+                                    Remove
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6">No requests found.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class = "table-info">
+    {% if requests %}
+        <p>Showing {{ requests|length }} request(s) matching your search criteria.</p>
+    {% else %}
+        <p>No requests found matching your search criteria.</p>
+    {% endif %}
+</div>
+{% endblock %}
