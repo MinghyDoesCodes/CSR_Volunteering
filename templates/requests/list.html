@@ -38,12 +38,12 @@
                 <th>Title</th>
                 <th>Requested By</th>
                 <th>View Count</th>
-                <th>Status</th>
+                <th style = "text-align: center;">Status</th>
                 {% if shortlist_counts is defined %}
                 <th>Shortlisted</th>
                 {% endif %}
-                <th>Created At</th>
-                <th>Actions</th>
+                <th style = "text-align: center;">Created At</th>
+                <th style = "text-align: center;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -52,17 +52,17 @@
                 <tr>
                     <td>{{ request.request_id }}</td>
                     <td><strong>{{ request.title }}</strong></td>
-                    <td>
+                    <td style = "text-align: center;">
                         {% if request.pin %}
                             {{ request.pin.username }}
                         {% else %}
                             Unknown
                         {% endif %}
                     </td>
-                    <td>{{ request.view_count }}</td>
-                    <td>
+                    <td style = "text-align: center;">{{ request.view_count }}</td>
+                    <td style = "text-align: center;">
                         {% if request.status == "Pending" %}
-                            <span class="badge badge-warning">Pending</span>
+                            <span class="badge badge-info">Pending</span>
                         {% elif request.status == "Completed" %}
                             <span class="badge badge-success">Completed</span>
                         {% else %}
@@ -70,27 +70,27 @@
                         {% endif %}
                     </td>
                     {% if shortlist_counts is defined or csr_shortlisted is defined %}
-                    <td>
+                    <td style="text-align: center;">
                         {% if user_profile == 'PIN' and shortlist_counts is defined %}
                             {# PIN user sees count #}
                             {% set count = shortlist_counts.get(request.request_id, 0) %}
                             {% if count > 0 %}
-                                <span class="badge badge-info">{{ count }} time{{ 's' if count > 1 else '' }}</span>
+                                <span class="badge badge-success">{{ count }} time{{ 's' if count > 1 else '' }}</span>
                             {% else %}
-                                <span class="badge badge-secondary">0 times</span>
+                                <span class="badge badge-info">0 times</span>
                             {% endif %}
                         {% elif user_profile == 'CSR Rep' and csr_shortlisted is defined %}
                             {# CSR Rep sees their own status #}
                             {% if csr_shortlisted.get(request.request_id, False) %}
                                 <span class="badge badge-success">Shortlisted</span>
                             {% else %}
-                                <span class="badge badge-secondary">Not Shortlisted</span>
+                                <span class="badge badge-info">No</span>
                             {% endif %}
                         {% endif %}
                     </td>
                     {% endif %}
-                    <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td class="table-actions">
+                    <td style="text-align: center;">{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td style="white-space: nowrap;" class="table-actions">
                         <a href="{{ url_for('viewRequest', request_id=request.request_id) }}" class="btn btn-sm btn-info">View</a>
                         {% if user_profile == 'PIN' %}
                         <a href="{{ url_for('updateRequest', request_id=request.request_id) }}" class="btn btn-sm btn-warning">Edit</a>

@@ -405,6 +405,7 @@ textarea.form-control {
     font-weight: 600;
     color: var(--text-primary);
     border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
 }
 
 .data-table td {
@@ -417,8 +418,7 @@ textarea.form-control {
 }
 
 .table-actions {
-    display: flex;
-    gap: 0.5rem;
+    text-align: center;
 }
 
 .table-info {
