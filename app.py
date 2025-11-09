@@ -5,6 +5,7 @@ from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
 from controllers.CSR.searchShortlistCtrl import searchShortlistCtrl
+from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
 
 import os
 
@@ -89,7 +90,7 @@ auth_controller = AuthenticationController()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 pin_boundary = PINBoundary()
 searchShortList = searchShortlistCtrl()
-
+listCategory = ViewCategoryCtrl()
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -309,13 +310,17 @@ def searchShortlists():
         return redirect(url_for('dashboard'))
 
     keyword = request.args.get('keyword', '').strip()
-    shortlist = searchShortList.searchShortlist(current_user.id, keyword)
+    categoryID = request.args.get('category_id', '').strip()
+    shortlist = searchShortList.searchShortlist(current_user.id, keyword, categoryID)
     print("Requests: ", shortlist)
+
+    categories = listCategory.listCategories()
 
     return render_template(
             'shortlist.html',
             requests=shortlist,
-            keyword=keyword
+            keyword=keyword,
+            categories=categories
         )
 
 # ==================== CATEGORY MANAGEMENT ====================

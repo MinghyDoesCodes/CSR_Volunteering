@@ -89,7 +89,7 @@ class Shortlist(Base):
         return 2 # Successfully removed from shortlist
     
     @classmethod
-    def searchShortlist(cls, session, userID, keyword):
+    def searchShortlist(cls, session, userID, keyword, categoryID):
         query = (
             session.query(cls)
             .join(Request, cls.request_id == Request.request_id)
@@ -109,5 +109,12 @@ class Shortlist(Base):
                 (UserAccount.username.ilike(search_pattern)) |
                 (UserAccount.first_name.ilike(search_pattern))
             )
+
+        if categoryID:
+            try:
+                categoryID = int(categoryID)
+                query = query.filter(Request.category_id == categoryID)
+            except ValueError:
+                pass
 
         return query.all()

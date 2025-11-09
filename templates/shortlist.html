@@ -26,8 +26,8 @@
                 <label for="category_id">Category</label>
                     <select id="category_id" name="category_id" class="form-control">
                         <option value="">All Category</option>
-                        {% for shortlist in requests %}
-                            <option value="{{ shortlist.request.category.category_id }}">{{ shortlist.request.category.title }}</option>
+                        {% for c in categories %}
+                            <option value="{{ c.category_id }}">{{ c.title }}</option>
                         {% endfor %}
                     </select>   
             </div>

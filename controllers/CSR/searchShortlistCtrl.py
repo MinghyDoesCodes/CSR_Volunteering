@@ -5,5 +5,5 @@ class searchShortlistCtrl:
     def __init__(self):
         self.session = get_session()
 
-    def searchShortlist(self, userID, keyword=None):
-        return Shortlist.searchShortlist(self.session, userID, keyword)
+    def searchShortlist(self, userID, keyword=None, categoryID= None):
+        return Shortlist.searchShortlist(self.session, userID, keyword, categoryID)
