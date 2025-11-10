@@ -4,6 +4,7 @@ from controllers.authentication_controller import AuthenticationController
 from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
 from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
 from boundaries.pin_boundary import PINBoundary
+from boundaries.csr_rep_boundary import CSRRepBoundary
 from controllers.CSR.searchShortlistCtrl import searchShortlistCtrl
 from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
 
@@ -89,6 +90,7 @@ app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in
 auth_controller = AuthenticationController()
 shortlistRequestCtrl = ShortlistRequestCtrl()
 pin_boundary = PINBoundary()
+csr_rep_boundary = CSRRepBoundary()
 searchShortList = searchShortlistCtrl()
 listCategory = ViewCategoryCtrl()
 
@@ -277,7 +279,7 @@ def shortlistRequest(request_id):
     """Shortlist a request"""
     current_user = auth_controller.get_current_user()
     
-    success, message = shortlistRequestCtrl.shortlistRequest(request_id, current_user.id)
+    success, message = csr_rep_boundary.handle_shortlist_request_web(request_id, current_user)
     
     if success:
         flash(message, 'success')
@@ -290,14 +292,12 @@ def shortlistRequest(request_id):
 @require_login
 def removeShortlist(request_id):
     current_user = auth_controller.get_current_user()
-    result = shortlistRequestCtrl.removeShortlist(request_id, current_user.id)
+    success, message = csr_rep_boundary.handle_remove_shortlist_web(request_id, current_user)
 
-    if result == 1:
-        flash(f"Request with ID {request_id} is not part of your shortlist", 'error')
-    elif result == 2:
-        flash(f"Request with ID '{request_id}' successfully removed from your shortlist", 'success')
-    else: 
-        flash("Error removing request from shortlist", 'error')
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
 
     return redirect(url_for('viewRequest', request_id=request_id))
 

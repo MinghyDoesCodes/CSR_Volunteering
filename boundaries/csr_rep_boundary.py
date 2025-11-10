@@ -170,6 +170,35 @@ class CSRRepBoundary:
         else:
             print(f"\n✗ {message}")
     
+    # ==================== WEB HELPERS ====================
+
+    def handle_shortlist_request_web(self, request_id, current_user):
+        """Handle shortlisting from web interface"""
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            return False, "Access denied. Only CSR Reps can shortlist requests."
+
+        request = self.view_request_ctrl.viewRequest(request_id)
+        if not request:
+            return False, f"Request with ID {request_id} not found."
+
+        if self.shortlist_request_ctrl.isShortlisted(request_id, current_user.id):
+            return False, "Request already in your shortlist."
+
+        return self.shortlist_request_ctrl.shortlistRequest(request_id, current_user.id)
+
+    def handle_remove_shortlist_web(self, request_id, current_user):
+        """Handle removing shortlist from web interface"""
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            return False, "Access denied. Only CSR Reps can modify shortlists."
+
+        result = self.shortlist_request_ctrl.removeShortlist(request_id, current_user.id)
+        if result == 1:
+            return False, f"Request with ID {request_id} is not part of your shortlist."
+        elif result == 2:
+            return True, f"Request with ID '{request_id}' successfully removed from your shortlist."
+
+        return False, "Error removing request from shortlist."
+
     def handle_view_my_shortlist(self):
         """Handle viewing CSR Rep's shortlisted requests"""
         print("\n--- MY SHORTLISTED REQUESTS ---")
