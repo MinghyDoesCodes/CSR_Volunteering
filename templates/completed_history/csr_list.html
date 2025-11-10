@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}CSR – Completed Match History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:8px;">
+      <path d="M9 11l3 3L22 4"></path>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+    </svg>
+    Completed Match History (CSR)
+  </h1>
+</div>
+
+{# ---------- FILTER BAR ---------- #}
+<form class="filter-bar" method="get" action="{{ url_for('csrSearchCompletedHistory') }}"
+      style="margin:0 0 1rem 0; display:flex; gap:.5rem; align-items:end; flex-wrap:wrap;">
+  <div>
+    <label class="form-label">Service Type</label>
+    <select name="serviceType" class="form-control">
+      <option value="">-- Any --</option>
+      {% for st in (service_types|default([])) %}
+        <option value="{{ st }}" {% if filters and filters.serviceType == st %}selected{% endif %}>{{ st }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="form-label">From</label>
+    <input type="date" name="from" class="form-control" value="{{ (filters.from if filters else '') or '' }}">
+  </div>
+  <div>
+    <label class="form-label">To</label>
+    <input type="date" name="to" class="form-control" value="{{ (filters.to if filters else '') or '' }}">
+  </div>
+  <div>
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if filters and (filters.serviceType or filters.from or filters.to) %}
+      <a class="btn btn-light" href="{{ url_for('csrViewCompletedHistory') }}">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+{# ---------- LIST / EMPTY STATE ---------- #}
+{% set has_filters = (filters and (filters.serviceType or filters.from or filters.to)) %}
+{% set page_endpoint = 'csrSearchCompletedHistory' if has_filters else 'csrViewCompletedHistory' %}
+
+{% if total_count == 0 %}
+  <div class="empty-state">
+    {% if has_filters %}
+      <p>No completed matches found matching your filters.</p>
+      <p><a class="btn btn-sm btn-secondary" href="{{ url_for('csrViewCompletedHistory') }}">Clear filters</a></p>
+    {% else %}
+      <p>No completed matches found.</p>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Match ID</th>
+          <th>Request Title</th>
+          <th>Service Type</th>
+          <th>PIN</th>
+          <th>Completed At</th>
+          <th style="text-align:center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td>{{ item.match_id }}</td>
+          <td>
+            {% if item.request %}
+              <strong>{{ item.request.title }}</strong>
+            {% else %}
+              <em>Request not found</em>
+            {% endif %}
+          </td>
+          <td>{{ item.service_type or 'N/A' }}</td>
+          <td>
+            {% if item.pin %}
+              {{ item.pin.first_name }} {{ item.pin.last_name }}
+            {% else %}
+              <em>Unknown</em>
+            {% endif %}
+          </td>
+          <td>{{ (item.completed_at or item.created_at).strftime('%Y-%m-%d %H:%M') }}</td>
+          <td style="white-space:nowrap; text-align:center;" class="table-actions">
+            <a class="btn btn-sm btn-info" href="{{ url_for('csrViewCompletedDetails', match_id=item.match_id) }}">View</a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_meta.totalPages > 1 %}
+    <div class="pagination">
+      <div class="pagination-info">
+        Showing {{ page_meta.offset + 1 }}
+        to {{ [page_meta.offset + page_meta.limit, page_meta.totalCount]|min }}
+        of {{ page_meta.totalCount }} completed matches
+      </div>
+      <div class="pagination-controls">
+        {% if page_meta.hasPrev %}
+          <a class="btn btn-sm btn-secondary"
+             href="{{ url_for(page_endpoint,
+                              page=page_meta.page - 1,
+                              serviceType=(filters.serviceType if has_filters else None),
+                              from=(filters.from if has_filters else None),
+                              to=(filters.to if has_filters else None)) }}">← Previous</a>
+        {% endif %}
+        <span class="page-info">Page {{ page_meta.page }} of {{ page_meta.totalPages }}</span>
+        {% if page_meta.hasNext %}
+          <a class="btn btn-sm btn-secondary"
+             href="{{ url_for(page_endpoint,
+                              page=page_meta.page + 1,
+                              serviceType=(filters.serviceType if has_filters else None),
+                              from=(filters.from if has_filters else None),
+                              to=(filters.to if has_filters else None)) }}">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="table-info">
+      <p>Total: {{ total_count }} completed match{{ 'es' if total_count != 1 else '' }}</p>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

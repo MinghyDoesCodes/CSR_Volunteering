@@ -8,6 +8,18 @@ from boundaries.csr_rep_boundary import CSRRepBoundary
 from controllers.CSR.searchShortlistCtrl import searchShortlistCtrl
 from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
 
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# 🆕 Extra imports for CSR Completed History (added, original kept intact)
+from database.db_config import get_session, close_session  # used by helper below
+from controllers.CSR.CSR_viewHistoryCtrl import CSRViewHistoryCtrl
+from controllers.CSR.CSR_completedHistoryCtrl import (
+    CSRCompletedHistoryCtrl,
+    AuthError as CSRAuthError,
+    ValidationError as CSRValidationError,
+)
+from entities.match import Match
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 import os
 
 # Import boundaries
@@ -70,7 +82,7 @@ createRequestUI = CreateRequestUI()
 viewRequestUI = ViewRequestUI()
 updateRequestUI = UpdateRequestUI()
 deleteRequestUI = DeleteRequestUI()
-searchRequestUI =SearchRequestUI()
+searchRequestUI = SearchRequestUI()
 
 listCategoryUI = ListCategoryUI()
 createCategoryUI = CreateCategoryUI()
@@ -93,6 +105,12 @@ pin_boundary = PINBoundary()
 csr_rep_boundary = CSRRepBoundary()
 searchShortList = searchShortlistCtrl()
 listCategory = ViewCategoryCtrl()
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# 🆕 CSR Completed History controllers (added)
+csr_view_hist_ctrl = CSRViewHistoryCtrl()
+csr_search_hist_ctrl = CSRCompletedHistoryCtrl()
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -120,6 +138,27 @@ def require_user_admin(f):
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# 🆕 Helper to populate CSR service types dropdown (added)
+def _csr_service_types(csr_id: int):
+    s = get_session()
+    try:
+        rows = (
+            s.query(Match.service_type)
+             .filter(
+                 Match.csr_rep_id == int(csr_id),
+                 Match.status == "Completed",
+                 Match.service_type.isnot(None)
+             )
+             .distinct()
+             .order_by(Match.service_type)
+             .all()
+        )
+        return [r[0] for r in rows]
+    finally:
+        close_session()
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # ==================== PUBLIC ROUTES ====================
 
@@ -367,19 +406,17 @@ def searchCategories():
 def createDailyReport():
     return dailyReportUI.handle_create_daily_report()
 
-
 @app.route('/reports/weekly')
 @require_login
 def createWeeklyReport():
     return weeklyReportUI.handle_create_weekly_report()
-
 
 @app.route('/reports/monthly')
 @require_login
 def createMonthlyReport():
     return monthlyReportUI.handle_create_monthly_report()
 
-# ==================== COMPLETED MATCH HISTORY ====================
+# ==================== COMPLETED MATCH HISTORY (PIN) ====================
 
 @app.route('/completed-history')
 @require_login
@@ -449,17 +486,96 @@ def searchCompletedHistory():
     # Route passes data to template
     return render_template('completed_history/list.html', **render_data)
 
+# ==================== COMPLETED MATCH HISTORY (CSR Rep) – ADDED ====================
+
+@app.route('/csr/completed-history')
+@require_login
+def csrViewCompletedHistory():
+    user = auth_controller.get_current_user()
+    if not user or user.user_profile.profile_name != "CSR Rep":
+        flash("Access denied. CSR Rep only.", "error")
+        return redirect(url_for("dashboard"))
+
+    page = request.args.get("page", default=1, type=int)
+    try:
+        items, total_count, page_meta = csr_view_hist_ctrl.viewHistory(
+            csrRepID=user.id, page=page
+        )
+    except CSRAuthError as e:
+        flash(str(e), "error")
+        return redirect(url_for("dashboard"))
+
+    service_types = _csr_service_types(user.id)
+    return render_template(
+        "completed_history/csr_list.html",
+        items=items,
+        total_count=total_count,
+        page_meta=page_meta,
+        service_types=service_types,
+        filters=None,
+    )
+
+@app.route('/csr/completed-history/search')
+@require_login
+def csrSearchCompletedHistory():
+    user = auth_controller.get_current_user()
+    if not user or user.user_profile.profile_name != "CSR Rep":
+        flash("Access denied. CSR Rep only.", "error")
+        return redirect(url_for("dashboard"))
+
+    serviceType = (request.args.get("serviceType") or "").strip() or None
+    fromDate    = (request.args.get("from") or "").strip() or None
+    toDate      = (request.args.get("to") or "").strip() or None
+    page        = request.args.get("page", default=1, type=int)
+
+    try:
+        items, total_count, page_meta = csr_search_hist_ctrl.searchCompleted(
+            csrRepID=user.id,
+            serviceType=serviceType,
+            fromDate=fromDate,
+            toDate=toDate,
+            page=page,
+        )
+    except (CSRAuthError, CSRValidationError) as e:
+        flash(str(e), "error")
+        return redirect(url_for("csrViewCompletedHistory"))
+
+    service_types = _csr_service_types(user.id)
+    return render_template(
+        "completed_history/csr_list.html",
+        items=items,
+        total_count=total_count,
+        page_meta=page_meta,
+        service_types=service_types,
+        filters={"serviceType": serviceType, "from": fromDate, "to": toDate},
+    )
+
+@app.route('/csr/completed-history/<int:match_id>')
+@require_login
+def csrViewCompletedDetails(match_id: int):
+    user = auth_controller.get_current_user()
+    if not user or user.user_profile.profile_name != "CSR Rep":
+        flash("Access denied. CSR Rep only.", "error")
+        return redirect(url_for("dashboard"))
+
+    try:
+        m = csr_view_hist_ctrl.viewDetails(csrRepID=user.id, matchID=match_id)
+    except CSRAuthError as e:
+        flash(str(e), "error")
+        return redirect(url_for("csrViewCompletedHistory"))
+
+    # Template built to mirror request details wireframe
+    return render_template("completed_history/details.html", m=m)
+
 # ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)
 def not_found(error):
     return render_template('error.html', error_code=404, error_message='Page not found'), 404
 
-
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('error.html', error_code=500, error_message='Internal server error'), 500
-
 
 # ==================== RUN APPLICATION ====================
 

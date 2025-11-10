@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Completed Service Details - CSR Volunteering System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:8px;">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+    Completed Service Details
+  </h1>
+  <div class="page-actions">
+    {# show "View Request" when we have the related request #}
+    {% if (m and m.request) or (match and match.request) %}
+      <a href="{{ url_for('viewRequest', request_id=(m.request.request_id if m else match.request.request_id)) }}" class="btn btn-info">View Request</a>
+    {% endif %}
+    <a href="{{ url_for('csrViewCompletedHistory') }}" class="btn btn-secondary">← Back to History</a>
+  </div>
+</div>
+
+{# accept either 'm' or 'match' from the route #}
+{% set m = m or match %}
+
+<div class="detail-container">
+  <!-- Card 1: Service Information -->
+  <div class="detail-card">
+    <h3>Service Information</h3>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <label>Match ID:</label>
+        <span>{{ m.match_id }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>Status:</label>
+        <span>
+          {% if m.status == "Completed" %}
+            <span class="badge badge-success">Completed</span>
+          {% elif m.status == "Cancelled" %}
+            <span class="badge badge-danger">Cancelled</span>
+          {% elif m.status in ["In Progress","In-Progress","InProgress"] %}
+            <span class="badge badge-info">In Progress</span>
+          {% else %}
+            <span class="badge badge-warning">{{ m.status }}</span>
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="detail-item">
+        <label>Service Type:</label>
+        <span>{{ m.service_type or 'N/A' }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>Request:</label>
+        <span>
+          {% if m.request %}
+            [{{ m.request.request_id }}] {{ m.request.title }}
+          {% else %}
+            <em>Request not found</em>
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="detail-item">
+        <label>Category:</label>
+        <span>
+          {% if m.request and m.request.category %}
+            {{ m.request.category.title }}
+          {% else %}
+            Unassigned
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="detail-item">
+        <label>PIN:</label>
+        <span>
+          {% if m.pin %}
+            {{ m.pin.first_name }} {{ m.pin.last_name }}
+          {% else %}
+            <em>Unknown</em>
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="detail-item">
+        <label>CSR Rep:</label>
+        <span>
+          {% if m.csr_rep %}
+            {{ m.csr_rep.first_name }} {{ m.csr_rep.last_name }}
+          {% else %}
+            <em>Unknown</em>
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="detail-item" style="grid-column: 1 / -1;">
+        <label>Notes:</label>
+        <span>{{ m.notes or '—' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Additional Information -->
+  <div class="detail-card">
+    <h3>Additional Information</h3>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <label>Completed At:</label>
+        <span>{{ (m.completed_at or m.created_at).strftime('%Y-%m-%d %H:%M:%S') }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>Created At:</label>
+        <span>{{ m.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>Updated At:</label>
+        <span>{{ m.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

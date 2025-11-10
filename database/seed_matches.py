@@ -1,119 +1,154 @@
 """
-Script to seed test completed match data
-Run this to create sample completed matches for testing
+seed_matches.py
+Script to seed test *completed* match data so your CSR/PIN history pages stop looking lonely.
+Run:  python seed_matches.py
 """
+
+from datetime import datetime, timedelta, time
+from typing import List
+
+from sqlalchemy.orm import joinedload
 
 from database.db_config import get_session
 from entities.match import Match
 from entities.request import Request
 from entities.user_account import UserAccount
-from datetime import datetime, timedelta
+from entities.user_profile import UserProfile
+from entities.category import Category  # only used if we need a fallback title
 
 
-def seed_completed_matches():
+def _pick_service_type(req: Request, session) -> str:
     """
-    Create sample completed matches for testing
+    Choose a service_type from the request's category title if available.
+    Otherwise fall back to 'Miscellaneous'.
+    """
+    if getattr(req, "category", None) and getattr(req.category, "title", None):
+        return req.category.title
+
+    # If relationship isn't loaded but category_id exists, fetch it
+    if getattr(req, "category_id", None):
+        cat = session.query(Category).filter_by(category_id=req.category_id).first()
+        if cat and cat.title:
+            return cat.title
+
+    return "Miscellaneous"
+
+
+def _already_has_completed_match(session, req: Request, pin_user: UserAccount, csr_user: UserAccount) -> Match | None:
+    """
+    Return an existing match for the same request/pin/csr if it exists (any status).
+    """
+    return (
+        session.query(Match)
+        .filter(
+            Match.request_id == req.request_id,
+            Match.pin_id == pin_user.id,
+            Match.csr_rep_id == csr_user.id,
+        )
+        .first()
+    )
+
+
+def seed_completed_matches(limit: int = 3) -> None:
+    """
+    Create up to `limit` completed matches across the most recent requests
+    owned by a PIN user, assigned to a CSR Rep. Skips anything that already exists.
+    If a match exists but isn't Completed, we flip it to Completed (you’re welcome).
     """
     session = get_session()
-    
     try:
-        from entities.user_profile import UserProfile
-        
-        # Find PIN profile ID
-        pin_profile = session.query(UserProfile).filter_by(profile_name='PIN').first()
-        csr_profile = session.query(UserProfile).filter_by(profile_name='CSR Rep').first()
-        
+        # Ensure required profiles exist
+        pin_profile = session.query(UserProfile).filter_by(profile_name="PIN").first()
+        csr_profile = session.query(UserProfile).filter_by(profile_name="CSR Rep").first()
         if not pin_profile or not csr_profile:
-            print("✗ User profiles not found. Please run database initialization first.")
+            print("✗ User profiles not found. Run DB init first.")
             return
-        
-        # Find a PIN user and a CSR Rep user
+
+        # Grab any PIN and any CSR Rep (first ones will do for seeding)
         pin_user = session.query(UserAccount).filter_by(user_profile_id=pin_profile.id).first()
-        csr_rep = session.query(UserAccount).filter_by(user_profile_id=csr_profile.id).first()
-        
+        csr_user = session.query(UserAccount).filter_by(user_profile_id=csr_profile.id).first()
         if not pin_user:
-            print("✗ No PIN user found. Please create a PIN user account first.")
+            print("✗ No PIN user found. Create a PIN user first.")
             return
-        
-        if not csr_rep:
-            print("✗ No CSR Rep user found. Please create a CSR Rep user account first.")
+        if not csr_user:
+            print("✗ No CSR Rep user found. Create a CSR Rep user first.")
             return
-        
-        # Find requests from the PIN user (with category relationship loaded)
-        from sqlalchemy.orm import joinedload
-        requests = session.query(Request).options(
-            joinedload(Request.category)
-        ).filter_by(user_account_id=pin_user.id).limit(5).all()
-        
+
+        # Pull a few recent requests *belonging to that PIN* (with category eager-loaded)
+        requests: List[Request] = (
+            session.query(Request)
+            .options(joinedload(Request.category))
+            .filter(Request.user_account_id == pin_user.id)
+            .order_by(Request.created_at.desc())
+            .limit(max(1, limit + 2))  # grab a few extra in case some are already matched
+            .all()
+        )
         if not requests:
-            print("✗ No requests found for PIN user. Please create some requests first.")
+            print("✗ No requests found for the PIN user. Create some requests first.")
             return
-        
+
         matches_created = 0
-        
-        # Create completed matches for some requests
-        for i, req in enumerate(requests[:3]):  # Create matches for up to 3 requests
-            # Check if match already exists
-            existing = session.query(Match).filter_by(
-                request_id=req.request_id,
-                pin_id=pin_user.id,
-                csr_rep_id=csr_rep.id
-            ).first()
-            
+        matches_updated = 0
+        day_cursor = 1
+
+        for req in requests[:limit]:
+            existing = _already_has_completed_match(session, req, pin_user, csr_user)
+
+            completed_at = datetime.now() - timedelta(days=day_cursor)
+            created_at = completed_at - timedelta(days=2)
+            day_cursor += 1
+
             if existing:
-                print(f"  - Match already exists for Request ID {req.request_id}, skipping")
+                if existing.status != "Completed":
+                    existing.status = "Completed"
+                    existing.service_type = existing.service_type or _pick_service_type(req, session)
+                    existing.completed_at = existing.completed_at or completed_at
+                    existing.updated_at = datetime.now()
+                    matches_updated += 1
+                    print(f"  ↺ Updated existing match #{existing.match_id} to Completed for request {req.request_id}")
+                else:
+                    print(f"  - Completed match already exists for request {req.request_id}, skipping")
                 continue
-            
-            # Get service type from the request's category
-            # If request has a category, use its title; otherwise use "Miscellaneous" as fallback
-            service_type = 'Miscellaneous'  # Default fallback
-            if req.category:
-                service_type = req.category.title
-            elif req.category_id:
-                # If category relationship isn't loaded, query it directly
-                from entities.category import Category
-                category = session.query(Category).filter_by(category_id=req.category_id).first()
-                if category:
-                    service_type = category.title
-            
-            # Create completed match
-            completed_at = datetime.now() - timedelta(days=i+1)  # Different dates for each
-            
+
+            # Create a fresh completed match
+            service_type = _pick_service_type(req, session)
             match = Match(
                 request_id=req.request_id,
                 pin_id=pin_user.id,
-                csr_rep_id=csr_rep.id,
-                status='Completed',
-                service_type=service_type,  # Use category title from request
-                notes=f'Completed assistance for request: {req.title}',
+                csr_rep_id=csr_user.id,
+                status="Completed",
+                service_type=service_type,
+                notes=f"Completed assistance for request: {req.title}",
                 completed_at=completed_at,
-                created_at=completed_at - timedelta(days=2),
-                updated_at=completed_at
+                created_at=created_at,
+                updated_at=completed_at,
             )
-            
             session.add(match)
             matches_created += 1
             print(f"  ✓ Created completed match for Request ID {req.request_id} (Service Type: {service_type})")
-        
-        if matches_created > 0:
+
+        if matches_created or matches_updated:
             session.commit()
-            print(f"\n✓ {matches_created} completed match(es) created successfully")
-            print(f"  PIN User: {pin_user.username}")
-            print(f"  CSR Rep: {csr_rep.username}")
+            print(
+                f"\n✓ Done. Created: {matches_created}, Updated: {matches_updated} "
+                f"| PIN: {pin_user.username} | CSR: {csr_user.username}"
+            )
         else:
-            print("\n✗ No new matches created")
-        
+            print("\nℹ Nothing to do. You already had enough completed matches. Show-off.")
+
     except Exception as e:
         session.rollback()
         print(f"✗ Error seeding matches: {e}")
         import traceback
         traceback.print_exc()
     finally:
-        session.close()
+        try:
+            session.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
     print("Seeding completed matches...")
-    seed_completed_matches()
+    seed_completed_matches(limit=3)
     print("\nDone!")
-

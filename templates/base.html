@@ -22,18 +22,26 @@
                         {{ session.get('username') }} ({{ session.get('user_profile') }})
                     </span>
                     <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+
                     {% if session.get('user_profile') == 'User Admin' %}
                         <a href="{{ url_for('list_user_accounts') }}" class="nav-link">User Accounts</a>
                         <a href="{{ url_for('list_user_profiles') }}" class="nav-link">User Profiles</a>
+
                     {% elif session.get('user_profile') == 'PIN' %}
                         <a href="{{ url_for('listRequests') }}" class="nav-link">Requests</a>
-                        
+                        <!-- PIN completed history (existing endpoints) -->
+                        <a href="{{ url_for('viewCompletedHistory') }}" class="nav-link">Completed History</a>
+
                     {% elif session.get('user_profile') == 'CSR Rep' %}
                         <a href="{{ url_for('listRequests') }}" class="nav-link">Requests</a>
                         <a href="{{ url_for('searchShortlists') }}" class="nav-link">Shortlists</a>
+                        <!-- CSR completed history (new endpoints) -->
+                        <a href="{{ url_for('csrViewCompletedHistory') }}" class="nav-link">Completed History</a>
+
                     {% elif session.get('user_profile') == 'Platform Manager' %}
                         <a href="{{ url_for('listCategories') }}" class="nav-link">Categories</a>
                     {% endif %}
+
                     <a href="{{ url_for('logout') }}" class="nav-link btn-logout">Logout</a>
                 {% else %}
                     {% if request.endpoint == 'login' %}
@@ -70,4 +78,3 @@
     </footer>
 </body>
 </html>
-
