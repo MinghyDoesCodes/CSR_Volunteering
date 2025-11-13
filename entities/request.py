@@ -56,17 +56,17 @@ class Request(Base):
         self.view_count +=  1
         session.commit()
     
-    def createRequest(session, user_account_id, title, category_id, description):
+    def createRequest(session, userID, title, categoryID, description):
         from entities.user_account import UserAccount as UA
-        user = UA.findById(session, user_account_id)
+        user = UA.findById(session, userID)
         if not user:
             return 0 # User does not exist
 
         """Create a new request"""
         request = Request(
-            user_account_id=user_account_id,
+            user_account_id=userID,
             title=title,
-            category_id=category_id,
+            category_id=categoryID,
             description=description
         )
         session.add(request)

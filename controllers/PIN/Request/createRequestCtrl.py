@@ -9,9 +9,9 @@ class CreateRequestCtrl:
         
         result = Request.createRequest(
             self.session,
-            user_account_id=userAccountID,
+            userID=userAccountID,
             title=title,
-            category_id=categoryID,
+            categoryID=categoryID,
             description=description
         )
         return result # 0: User does not exist, 1: Success
