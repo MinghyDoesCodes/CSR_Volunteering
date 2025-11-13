@@ -3,11 +3,16 @@ Comprehensive Seed Script for CSR Volunteering Platform
 Generates large-scale demo data for final product demonstration:
 - 100 PIN user accounts (pin, pin2, pin3...pin100)
 - 100 CSR Rep user accounts (csr, csr2, csr3...csr100)
-- 5 User Admin accounts (useradmin, useradmin2...useradmin5)
-- 5 Platform Manager accounts (pm2, pm3...pm6) - pm already exists from init
-- 120 Requests (distributed across PIN users, spread over past 3 months)
+- 5 User Admin accounts (admin, admin2, admin3, admin4, admin5)
+- 6 Platform Manager accounts (pm, pm2, pm3, pm4, pm5, pm6)
+- 100 Additional placeholder categories (Category 10 to Category 109)
+- 240 Total Requests:
+  * 120 distributed across all PIN users
+  * 120 specifically from default PIN user (username: pin)
 - 120 Shortlists (CSR Reps saving requests, spread over time)
-- 120 Matches (completed volunteer services, spread over past 3 months)
+- 240 Total Matches:
+  * 120 distributed across various CSR Reps
+  * 120 completed matches specifically by default CSR Rep (username: csr)
 
 This creates realistic data with timestamps for proper Daily/Weekly/Monthly report testing.
 """
@@ -118,12 +123,12 @@ def generate_comprehensive_data():
         session.commit()
         print(f"✓ {len(csr_accounts)} CSR Rep accounts ready")
         
-        # Generate 5 User Admin accounts (useradmin, useradmin2...useradmin5)
-        print("\nCreating 5 User Admin accounts...")
+        # Generate 5 additional User Admin accounts (admin already exists, add admin2...admin5)
+        print("\nCreating 4 additional User Admin accounts...")
         admin_password = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
-        for i in range(1, 6):
-            username = "useradmin" if i == 1 else f"useradmin{i}"
+        for i in range(2, 6):
+            username = f"admin{i}"
             
             existing = session.query(UserAccount).filter_by(username=username).first()
             if existing:
@@ -142,7 +147,7 @@ def generate_comprehensive_data():
             session.add(account)
         
         session.commit()
-        print("✓ 5 User Admin accounts created")
+        print("✓ 4 additional User Admin accounts created")
         
         # Generate 5 additional Platform Manager accounts (pm already exists, add pm2...pm6)
         print("\nCreating 5 additional Platform Manager accounts...")
@@ -170,7 +175,44 @@ def generate_comprehensive_data():
         session.commit()
         print("✓ 5 additional Platform Manager accounts created")
         
-        print("\n2. GENERATING REQUESTS")
+        print("\n2. GENERATING ADDITIONAL CATEGORIES")
+        print("-" * 60)
+        
+        # Generate 100 additional placeholder categories
+        print("Creating 100 additional placeholder categories...")
+        pm_account = session.query(UserAccount).filter_by(username="pm").first()
+        if not pm_account:
+            pm_account = session.query(UserAccount).filter_by(user_profile_id=pm_profile.id).first()
+        
+        pm_user_id = pm_account.id if pm_account else 1
+        categories_added = 0
+        
+        for i in range(10, 110):  # Category 10 to Category 109
+            category_title = f"Category {i}"
+            
+            # Check if already exists
+            existing = session.query(Category).filter_by(title=category_title).first()
+            if existing:
+                continue
+            
+            category = Category(
+                created_by=pm_user_id,
+                title=category_title,
+                description=f"Placeholder category for testing and demonstration purposes",
+                status="Active",
+                is_active=True
+            )
+            session.add(category)
+            categories_added += 1
+            
+            if i % 20 == 0:
+                session.flush()
+                print(f"  Created {categories_added} placeholder categories...")
+        
+        session.commit()
+        print(f"✓ {categories_added} additional placeholder categories created")
+        
+        print("\n3. GENERATING REQUESTS")
         print("-" * 60)
         
         # Get all active categories
@@ -274,7 +316,59 @@ def generate_comprehensive_data():
         print(f"  Status distribution: ~60% Pending, ~40% Completed")
         print(f"  Date range: Past 90 days")
         
-        print("\n3. GENERATING SHORTLISTS")
+        # Generate 120 additional requests specifically from default PIN user
+        print("\nCreating 120 additional requests from default PIN user...")
+        default_pin = session.query(UserAccount).filter_by(username="pin", user_profile_id=pin_profile.id).first()
+        
+        if default_pin:
+            default_pin_requests = 0
+            for i in range(120):
+                # Select random template
+                title_template, desc_template, category_title = random.choice(request_templates)
+                
+                # Get category_id
+                category_id = category_map.get(category_title, categories[0].category_id)
+                
+                # Add variety to titles
+                title = f"{title_template} (Default PIN #{i+1})"
+                description = desc_template
+                if random.random() > 0.5:
+                    description += " Please contact me if you can help. Thank you!"
+                
+                # Random status: 60% Pending, 40% Completed
+                status = 'Completed' if random.random() < 0.4 else 'Pending'
+                
+                # Random creation date (spread over last 90 days)
+                days_ago = random.randint(0, 90)
+                created_at = start_date + timedelta(days=days_ago, hours=random.randint(0, 23))
+                
+                request = Request(
+                    user_account_id=default_pin.id,
+                    title=title,
+                    category_id=category_id,
+                    description=description,
+                    status=status,
+                    view_count=random.randint(0, 50),
+                    created_at=created_at,
+                    updated_at=created_at + timedelta(hours=random.randint(1, 48))
+                )
+                
+                session.add(request)
+                requests_created.append(request)
+                default_pin_requests += 1
+                
+                if (i + 1) % 30 == 0:
+                    session.flush()
+                    print(f"  Created {default_pin_requests} default PIN requests...")
+            
+            session.commit()
+            print(f"✓ {default_pin_requests} additional requests from default PIN user created")
+        else:
+            print("⚠️  Default PIN user not found, skipping additional requests")
+        
+        print(f"\n  Total Requests: {len(requests_created)}")
+        
+        print("\n4. GENERATING SHORTLISTS")
         print("-" * 60)
         
         # Generate 120 shortlists (CSR Reps saving requests)
@@ -325,7 +419,7 @@ def generate_comprehensive_data():
         session.commit()
         print(f"✓ {shortlists_created} shortlists created successfully")
         
-        print("\n4. GENERATING MATCHES")
+        print("\n5. GENERATING MATCHES")
         print("-" * 60)
         
         # Generate 120 matches (completed volunteer services)
@@ -391,18 +485,78 @@ def generate_comprehensive_data():
         print(f"✓ {matches_created} matches created successfully")
         print(f"  Status distribution: Mix of Pending, In Progress, Completed")
         
+        # Generate 120 additional completed matches specifically by default CSR Rep
+        print("\nCreating 120 additional completed matches by default CSR Rep...")
+        default_csr = session.query(UserAccount).filter_by(username="csr", user_profile_id=csr_profile.id).first()
+        
+        if default_csr:
+            # Get all available requests
+            all_available_requests = session.query(Request).all()
+            
+            default_csr_matches = 0
+            for i in range(120):
+                # Select random request
+                request = random.choice(all_available_requests)
+                
+                # Random match creation date (between request creation and now)
+                days_diff = (datetime.now() - request.created_at).days
+                if days_diff < 1:
+                    days_diff = 1
+                match_created = request.created_at + timedelta(
+                    days=random.randint(0, days_diff)
+                )
+                
+                # All matches from default CSR Rep are completed
+                match_status = 'Completed'
+                completed_at = match_created + timedelta(days=random.randint(1, 14))
+                
+                # Get service type from category
+                category = session.query(Category).filter_by(category_id=request.category_id).first()
+                service_type = category.title if category else "General Assistance"
+                
+                match = Match(
+                    request_id=request.request_id,
+                    pin_id=request.user_account_id,
+                    csr_rep_id=default_csr.id,
+                    status=match_status,
+                    service_type=service_type,
+                    notes=f"Completed volunteer service by default CSR: {request.title[:50]}",
+                    created_at=match_created,
+                    completed_at=completed_at,
+                    updated_at=completed_at
+                )
+                
+                session.add(match)
+                matches_created += 1
+                default_csr_matches += 1
+                
+                if (i + 1) % 30 == 0:
+                    session.flush()
+                    print(f"  Created {default_csr_matches} default CSR matches...")
+            
+            session.commit()
+            print(f"✓ {default_csr_matches} additional completed matches by default CSR Rep created")
+        else:
+            print("⚠️  Default CSR Rep user not found, skipping additional matches")
+        
+        print(f"\n  Total Matches: {matches_created}")
+        
         print("\n" + "=" * 60)
         print("COMPREHENSIVE DATA GENERATION COMPLETE!")
         print("=" * 60)
         print("\nSummary:")
         print(f"  ✓ 100 PIN user accounts (pin, pin2...pin100) - Password: pin123")
         print(f"  ✓ 100 CSR Rep accounts (csr, csr2...csr100) - Password: csr123")
-        print(f"  ✓ 5 User Admin accounts (useradmin...useradmin5) - Password: admin123")
-        print(f"  ✓ 5 Platform Manager accounts (pm2...pm6) - Password: pm123")
-        print(f"  ✓ {len(requests_created)} requests distributed across PIN users")
+        print(f"  ✓ 5 User Admin accounts (admin, admin2...admin5) - Password: admin123")
+        print(f"  ✓ 6 Platform Manager accounts (pm, pm2...pm6) - Password: pm123")
+        print(f"  ✓ {categories_added} additional placeholder categories (Category 10 to Category 109)")
+        print(f"  ✓ {len(requests_created)} total requests (120 distributed + 120 from default PIN)")
         print(f"  ✓ {shortlists_created} shortlists from CSR Reps")
-        print(f"  ✓ {matches_created} matches (volunteer services)")
+        print(f"  ✓ {matches_created} total matches (120 distributed + 120 by default CSR Rep)")
         print(f"\nData spans: Past 90 days for realistic Daily/Weekly/Monthly reports")
+        print(f"\nSpecial accounts:")
+        print(f"  • Default PIN (username: pin) has 120 dedicated requests")
+        print(f"  • Default CSR Rep (username: csr) has 120 completed volunteer services")
         print("\nYour platform is now ready for final demonstration! 🎉")
         
     except Exception as e:
@@ -419,11 +573,12 @@ if __name__ == "__main__":
     print("This script will create:")
     print("  - 100 PIN user accounts")
     print("  - 100 CSR Rep user accounts")
-    print("  - 5 User Admin accounts")
-    print("  - 5 Platform Manager accounts")
-    print("  - 120 Requests")
+    print("  - 5 User Admin accounts (admin already exists, adds admin2-admin5)")
+    print("  - 6 Platform Manager accounts (pm already exists, adds pm2-pm6)")
+    print("  - 100 Additional placeholder categories")
+    print("  - 240 Total Requests (120 distributed + 120 from default PIN)")
     print("  - 120 Shortlists")
-    print("  - 120 Matches")
+    print("  - 240 Total Matches (120 distributed + 120 by default CSR Rep)")
     print("\nThis may take a few minutes to complete.")
     
     confirm = input("\nContinue? (y/n): ").strip().lower()
