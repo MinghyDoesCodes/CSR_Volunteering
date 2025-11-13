@@ -67,7 +67,7 @@ class Category(Base):
         self.title = title
         self.description = description
         self.status = status
-        if status == 'Active':
+        if status == 'active':
             self.is_active = True
         else:
             self.is_active = False        
