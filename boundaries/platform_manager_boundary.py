@@ -71,13 +71,11 @@ class UpdateCategoryUI:
         if request.method == 'POST':
             title = request.form.get('category_title')
             description = request.form.get('category_description')
-            status = request.form.get('category_status')
 
             result = self.c.updateCategory(
                 categoryID=category_id,
                 title=title,
-                description=description,
-                status=status
+                description=description
             )
 
             if result == 0:

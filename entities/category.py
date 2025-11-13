@@ -61,16 +61,11 @@ class Category(Base):
         session.commit()
         return 1 # Success
     
-    def updateCategory(self,session, title, description, status):
+    def updateCategory(self,session, title, description):
         
         """Update request details"""
         self.title = title
-        self.description = description
-        self.status = status
-        if status == 'active':
-            self.is_active = True
-        else:
-            self.is_active = False        
+        self.description = description     
         session.commit()
         return 1
     
