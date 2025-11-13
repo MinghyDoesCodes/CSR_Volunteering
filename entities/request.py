@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, joinedload
 from datetime import datetime
 from database.db_config import Base
+from entities.user_account import UserAccount
 
 class Request(Base):
     __tablename__ = 'requests'
@@ -102,14 +103,22 @@ class Request(Base):
     
     def searchRequests(session, keyword, status):
         """Search requests by keyword and status"""
-        query = session.query(Request)
+        # query = session.query(Request)
+        query = (
+            session.query(Request)
+            .join(UserAccount, Request.user_account_id == UserAccount.id)
+            .options(joinedload(Request.pin))
+        )
+        
         
         # Apply keyword filter
         if keyword:
             keyword_filter = f"%{keyword}%"
             query = query.filter(
                 (Request.title.ilike(keyword_filter)) |
-                (Request.description.ilike(keyword_filter))
+                (Request.description.ilike(keyword_filter)) |
+                (UserAccount.username.ilike(keyword_filter)) |
+                (UserAccount.first_name.ilike(keyword_filter))
             )
         
         # Apply status filter
@@ -117,6 +126,6 @@ class Request(Base):
             # Normalize status to match database format (capitalize first letter)
             # Form sends "pending" or "completed", but DB stores "Pending" or "Completed"
             normalized_status = status.capitalize()
-            query = query.filter_by(status=normalized_status)
+            query = query.filter(Request.status == normalized_status)
         
         return query.all()

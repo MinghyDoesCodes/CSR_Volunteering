@@ -7,7 +7,12 @@ from controllers.PIN.Request.updateRequestCtrl import UpdateRequestCtrl
 from controllers.PIN.Request.deleteRequestCtrl import DeleteRequestCtrl
 from controllers.PIN.Request.searchRequestCtrl import SearchRequestCtrl
 from controllers.PIN.viewShortlistCountCtrl import ViewShortlistCountCtrl
+from controllers.PIN.viewHistoryCtrl import ViewHistoryCtrl
+from controllers.PIN.completedHistoryCtrl import CompletedHistoryCtrl
 from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
+from controllers.CSR.searchShortlistCtrl import searchShortlistCtrl
+from controllers.CSR.CSR_viewHistoryCtrl import CSRViewHistoryCtrl
+from controllers.CSR.CSR_completedHistoryCtrl import CSRCompletedHistoryCtrl, ValidationError
 from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
 
 class ListRequestUI:
@@ -180,15 +185,281 @@ class SearchRequestUI:
 
     def onClick(self):
         keyword = request.args.get('keyword', '')
+        status = request.args.get('status', '')
     
         current_user = self.a.get_current_user()
         user_profile = current_user.user_profile.profile_name if current_user else None
+
+        if user_profile == 'PIN':
+            # PIN users only search their own requests
+            all_requests = self.c.searchRequests(keyword or None, status)
+            requests = [req for req in all_requests if req.user_account_id == current_user.id]
+        else:
+            # CSR Reps search all requests
+            requests = self.c.searchRequests(keyword or None, status)
         
-        requests = self.c.searchRequests(keyword or None, None)
         render = render_template('requests/search.html', 
                             requests=requests,
                             keyword=keyword,
+                            status=status,
                             user_profile=user_profile)
         
+        close_session()
+        return render
+    
+# PIN User View Completed History
+class ViewCompletedHistoryUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = ViewHistoryCtrl()
+        self.cat = ViewCategoryCtrl()
+
+    def onClickHistory(self):
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'PIN':
+            flash("Only PIN Users can view completed match history.", 'error')
+            return redirect(url_for('dashboard'))
+        
+        page = request.args.get('page', 1, type=int)
+
+        items, total_count, page_meta = self.c.viewHistory(current_user.id, page)
+        print ("Items: ", items)
+
+        categories = self.cat.listCategories()
+        service_types = [cat.title for cat in categories] if categories else []
+
+        render = render_template(
+                    'completed_history/list.html',
+                    items=items,
+                    total_count=total_count,
+                    page_meta=page_meta,
+                    user = current_user,
+                    service_types = service_types
+        )
+        close_session()
+        return render
+    
+# PIN User Search and filter Completed History
+class CompletedHistoryUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = CompletedHistoryCtrl()
+        self.cat = ViewCategoryCtrl()
+
+    def onSearchClick(self):
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'PIN':
+            flash("Only PIN users can view completed match history.", 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Get filter parameters from query string
+        service_type = request.args.get('serviceType', '').strip() or None
+        from_date = request.args.get('from', '').strip() or None
+        to_date = request.args.get('to', '').strip() or None
+        page = request.args.get('page', 1, type=int)
+
+        items, total_count, page_meta = self.c.searchCompleted(
+            current_user.id,
+            service_type,
+            from_date,
+            to_date,
+            page
+        )
+        filters = {
+            'serviceType': service_type,
+            'from': from_date,
+            'to': to_date
+        }
+        categories = self.cat.listCategories()
+        service_types = [cat.title for cat in categories] if categories else []
+        render = render_template(
+                    'completed_history/list.html',
+                    items=items,
+                    total_count=total_count,
+                    page_meta=page_meta,
+                    user = current_user,
+                    service_types = service_types,
+                    filters = filters,
+        )
+        close_session()
+        return render
+
+# CSR Rep Shortlist Request
+class CSRRepBoundary:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = ViewRequestCtrl()
+        self.s = ShortlistRequestCtrl()
+
+    def handle_shortlist_request_web(self, request_id):
+        """Handle shortlisting from web interface"""
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            flash("Only CSR Reps can shortlist requests.", 'error')
+
+        request = self.c.viewRequest(request_id)
+        if not request:
+            flash(f"Request with ID {request_id} not found.", 'error')
+            return redirect(url_for('listRequests'))
+        
+        result = self.s.shortlistRequest(request_id, current_user.id)
+        close_session()
+
+        if result == 1:
+            flash("Request is already shortlisted.", 'info')
+        elif result == 2:
+            flash("Request added to shortlist successfully.", 'success')
+            return redirect(url_for('viewRequest', request_id=request_id))
+        
+    def removeShortlist(self, request_id):
+        """Handle removing shortlist from web interface"""
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            flash("Only CSR Reps can remove shortlists.", 'error')
+
+        request = self.c.viewRequest(request_id)
+        if not request:
+            flash(f"Request with ID {request_id} not found.", 'error')
+            return redirect(url_for('listRequests'))
+        
+        result = self.s.removeShortlist(request_id, current_user.id)
+        close_session()
+
+        if result == 1:
+            flash("Request is not in your shortlist.", 'info')
+        elif result == 2:
+            flash("Request removed from shortlist successfully.", 'success')
+            return redirect(url_for('viewRequest', request_id=request_id))
+        
+# CSR Rep Search and filter Shortlist
+class SearchShortlistUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = searchShortlistCtrl()
+        self.cat = ViewCategoryCtrl()
+
+    def searchShortlists(self):
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            flash("Only CSR Reps can search their shortlist.", 'error')
+            return redirect(url_for('dashboard'))
+        
+        keyword = request.args.get('keyword', '').strip()
+        categoryID = request.args.get('category_id', '').strip()
+        shortlist = self.c.searchShortlist(current_user.id, keyword, categoryID)
+        print("Requests: ", shortlist)
+
+        categories = self.cat.listCategories()        
+        render = render_template(
+                    'shortlist.html', 
+                    requests=shortlist,
+                    keyword=keyword,
+                    categories=categories
+                )
+        close_session()
+        return render
+    
+#CSR Rep View Complete History
+class ListCompletedHistoryUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = CSRViewHistoryCtrl()
+
+    def displayPage(self):
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            flash("Only CSR Reps can view completed match history.", 'error')
+            return redirect(url_for('dashboard'))
+        
+        page = request.args.get('page', 1, type=int)
+        items, total_count, page_meta = self.c.viewHistory(current_user.id, page)
+        service_types = self.c.getServiceTypes(current_user.id)
+
+        render = render_template(
+                    'completed_history/csr_list.html',
+                    items=items,
+                    total_count=total_count,
+                    page_meta=page_meta,
+                    service_types = service_types,
+                    filters = None
+        )
+        close_session()
+        return render
+        
+
+#CSR Rep Search and filter Completed History
+class CSRCompletedHistoryUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.cs = CSRViewHistoryCtrl()
+        self.c = CSRCompletedHistoryCtrl()
+
+    def onClickHistory(self):
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            flash("Only CSR Reps can view completed match history.", 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Get filter parameters from query string
+        service_type = request.args.get('serviceType', '').strip() or None
+        from_date = request.args.get('from', '').strip() or None
+        to_date = request.args.get('to', '').strip() or None
+        page = request.args.get('page', 1, type=int)
+
+        try:
+            items, total_count, page_meta = self.c.searchCompleted(
+                current_user.id,
+                service_type,
+                from_date,
+                to_date,
+                page
+            )
+        except (ValidationError) as e:
+            flash(str(e), 'error')
+            return redirect(url_for('csrViewCompletedHistory'))
+        
+        # To populate service type filter dropdown
+        service_types = self.cs.getServiceTypes(current_user.id)
+        render = render_template(
+                    'completed_history/csr_list.html',
+                    items=items,
+                    total_count=total_count,
+                    page_meta=page_meta,
+                    service_types = service_types,
+                    filters = {'serviceType': service_type, 'from': from_date, 'to': to_date}
+        )
+        close_session()
+        return render
+
+#CSR Rep View Details of Completed Services
+class ViewCompletedDetailsUI:
+    def __init__(self):
+        self.a = AuthenticationController()
+        self.c = CSRViewHistoryCtrl()
+
+    def viewDetails(self, match_id):
+        current_user = self.a.get_current_user()
+        if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
+            flash("Only CSR Reps can view completed match history.", 'error')
+            return redirect(url_for('dashboard'))
+        
+        m = self.c.viewDetails(current_user.id, match_id)
+        if m == 0:
+            flash("Not authorised to view this CSR's completed services.", 'error')
+            return redirect(url_for('dashboard'))
+        elif m == 1:
+            flash(f"Completed match with ID {match_id} not found.", 'error')
+            return redirect(url_for('csrViewCompletedHistory'))
+        elif m == 2:
+            flash("You are not authorised to view this completed service.", 'error')
+            return redirect(url_for('csrViewCompletedHistory'))
+        elif m == 3:
+            flash("This service is not completed yet.", 'error')
+            return redirect(url_for('csrViewCompletedHistory'))
+
+        render = render_template(
+                    'completed_history/details.html',
+                    m=m
+        )
         close_session()
         return render

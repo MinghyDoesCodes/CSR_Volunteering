@@ -1,25 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from database.db_config import init_database
 from controllers.authentication_controller import AuthenticationController
-from controllers.CSR.shortlistRequestCtrl import ShortlistRequestCtrl
-from controllers.viewHistoryCtrl import ViewHistoryCtrl, AuthError
-from boundaries.pin_boundary import PINBoundary
-from boundaries.csr_rep_boundary import CSRRepBoundary
-from controllers.CSR.searchShortlistCtrl import searchShortlistCtrl
-from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
-
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# 🆕 Extra imports for CSR Completed History (added, original kept intact)
-from database.db_config import get_session, close_session  # used by helper below
-from controllers.CSR.CSR_viewHistoryCtrl import CSRViewHistoryCtrl
-from controllers.CSR.CSR_completedHistoryCtrl import (
-    CSRCompletedHistoryCtrl,
-    AuthError as CSRAuthError,
-    ValidationError as CSRValidationError,
-)
-from entities.match import Match
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 import os
 
 # Import boundaries
@@ -47,7 +28,14 @@ from boundaries.request_boundary import (
     ViewRequestUI,
     UpdateRequestUI,
     DeleteRequestUI,
-    SearchRequestUI
+    SearchRequestUI,
+    ViewCompletedHistoryUI,
+    CompletedHistoryUI,
+    CSRRepBoundary,
+    SearchShortlistUI,
+    ListCompletedHistoryUI,
+    CSRCompletedHistoryUI,
+    ViewCompletedDetailsUI
 )
 
 from boundaries.platform_manager_boundary import (
@@ -83,6 +71,13 @@ viewRequestUI = ViewRequestUI()
 updateRequestUI = UpdateRequestUI()
 deleteRequestUI = DeleteRequestUI()
 searchRequestUI = SearchRequestUI()
+csrRepBoundary = CSRRepBoundary()
+searchShortListUI = SearchShortlistUI()
+viewCompletedHistoryUI = ViewCompletedHistoryUI()
+completedHistoryUI = CompletedHistoryUI()
+listCompletedHistoryUI = ListCompletedHistoryUI()
+csrCompletedHistoryUI = CSRCompletedHistoryUI()
+viewCompletedDetailsUI = ViewCompletedDetailsUI()
 
 listCategoryUI = ListCategoryUI()
 createCategoryUI = CreateCategoryUI()
@@ -100,17 +95,6 @@ app.secret_key = 'csr_volunteering_secret_key_change_in_production'  # Change in
 
 # Initialize controllers
 auth_controller = AuthenticationController()
-shortlistRequestCtrl = ShortlistRequestCtrl()
-pin_boundary = PINBoundary()
-csr_rep_boundary = CSRRepBoundary()
-searchShortList = searchShortlistCtrl()
-listCategory = ViewCategoryCtrl()
-
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# 🆕 CSR Completed History controllers (added)
-csr_view_hist_ctrl = CSRViewHistoryCtrl()
-csr_search_hist_ctrl = CSRCompletedHistoryCtrl()
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -138,27 +122,6 @@ def require_user_admin(f):
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
-
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# 🆕 Helper to populate CSR service types dropdown (added)
-def _csr_service_types(csr_id: int):
-    s = get_session()
-    try:
-        rows = (
-            s.query(Match.service_type)
-             .filter(
-                 Match.csr_rep_id == int(csr_id),
-                 Match.status == "Completed",
-                 Match.service_type.isnot(None)
-             )
-             .distinct()
-             .order_by(Match.service_type)
-             .all()
-        )
-        return [r[0] for r in rows]
-    finally:
-        close_session()
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # ==================== PUBLIC ROUTES ====================
 
@@ -315,52 +278,18 @@ def searchRequests():
 @app.route('/requests/<int:request_id>/shortlist', methods=['POST'])
 @require_login
 def shortlistRequest(request_id):
-    """Shortlist a request"""
-    current_user = auth_controller.get_current_user()
-    
-    success, message = csr_rep_boundary.handle_shortlist_request_web(request_id, current_user)
-    
-    if success:
-        flash(message, 'success')
-    else:
-        flash(message, 'error')
-    
-    return redirect(url_for('viewRequest', request_id=request_id))
+    """Shortlist a request"""   
+    return csrRepBoundary.handle_shortlist_request_web(request_id)
 
 @app.route('/requests/<int:request_id>/removeShortlist', methods=['POST'])
 @require_login
 def removeShortlist(request_id):
-    current_user = auth_controller.get_current_user()
-    success, message = csr_rep_boundary.handle_remove_shortlist_web(request_id, current_user)
-
-    if success:
-        flash(message, 'success')
-    else:
-        flash(message, 'error')
-
-    return redirect(url_for('viewRequest', request_id=request_id))
+    return csrRepBoundary.removeShortlist(request_id)
 
 @app.route('/shortlists')
 @require_login
 def searchShortlists():
-    current_user = auth_controller.get_current_user()
-    if not current_user or current_user.user_profile.profile_name != 'CSR Rep':
-        flash("Access denied. Only CSR Reps can view shortlists.", 'error')
-        return redirect(url_for('dashboard'))
-
-    keyword = request.args.get('keyword', '').strip()
-    categoryID = request.args.get('category_id', '').strip()
-    shortlist = searchShortList.searchShortlist(current_user.id, keyword, categoryID)
-    print("Requests: ", shortlist)
-
-    categories = listCategory.listCategories()
-
-    return render_template(
-            'shortlist.html',
-            requests=shortlist,
-            keyword=keyword,
-            categories=categories
-        )
+    return searchShortListUI.searchShortlists()
 
 # ==================== CATEGORY MANAGEMENT ====================
 
@@ -422,150 +351,30 @@ def createMonthlyReport():
 @require_login
 def viewCompletedHistory():
     """View completed match history for PIN users - Using Boundary Pattern"""
-    current_user = auth_controller.get_current_user()
-    
-    # Check if user is PIN
-    if not current_user or current_user.user_profile.profile_name != 'PIN':
-        flash('Only PIN users can view completed match history', 'error')
-        return redirect(url_for('dashboard'))
-    
-    # Get page number from query parameter
-    page = request.args.get('page', 1, type=int)
-    
-    # Call Boundary method (matches BCE diagram: onClickHistory())
-    result = pin_boundary.onClickHistory(page=page, current_user=current_user)
-    
-    if result is None:
-        # Boundary handles errors internally; show generic error
-        flash('Unable to load completed history. Please try again.', 'error')
-        return redirect(url_for('dashboard'))
-    
-    items, total_count, page_meta, user = result
-    
-    # Boundary prepares data for rendering (matches BCE: renderList())
-    render_data = pin_boundary.renderList(items, total_count, page_meta, user)
-    
-    # Route passes data to template
-    return render_template('completed_history/list.html', **render_data)
+    return viewCompletedHistoryUI.onClickHistory()
 
 @app.route('/completed-history/search', methods=['GET'])
 @require_login
 def searchCompletedHistory():
     """Search/filter completed match history for PIN users - Using Boundary Pattern"""
-    current_user = auth_controller.get_current_user()
-    
-    # Check if user is PIN
-    if not current_user or current_user.user_profile.profile_name != 'PIN':
-        flash('Only PIN users can view completed match history', 'error')
-        return redirect(url_for('dashboard'))
-    
-    # Get filter parameters from query string
-    service_type = request.args.get('serviceType', '').strip() or None
-    from_date = request.args.get('from', '').strip() or None
-    to_date = request.args.get('to', '').strip() or None
-    page = request.args.get('page', 1, type=int)
-    
-    # Call Boundary method (matches BCE diagram: onSearchClick())
-    result = pin_boundary.onSearchClick(
-        serviceType=service_type,
-        fromDate=from_date,
-        toDate=to_date,
-        page=page,
-        current_user=current_user
-    )
-    
-    if result is None:
-        flash('Unable to search completed history. Please check your filters and try again.', 'error')
-        return redirect(url_for('viewCompletedHistory'))
-    
-    items, total_count, page_meta, user, filters = result
-    
-    # Boundary prepares data for rendering (matches BCE: renderList())
-    render_data = pin_boundary.renderList(items, total_count, page_meta, user, filters=filters)
-    
-    # Route passes data to template
-    return render_template('completed_history/list.html', **render_data)
+    return completedHistoryUI.onSearchClick()
 
-# ==================== COMPLETED MATCH HISTORY (CSR Rep) – ADDED ====================
+# ==================== COMPLETED MATCH HISTORY (CSR Rep) ====================
 
 @app.route('/csr/completed-history')
 @require_login
 def csrViewCompletedHistory():
-    user = auth_controller.get_current_user()
-    if not user or user.user_profile.profile_name != "CSR Rep":
-        flash("Access denied. CSR Rep only.", "error")
-        return redirect(url_for("dashboard"))
-
-    page = request.args.get("page", default=1, type=int)
-    try:
-        items, total_count, page_meta = csr_view_hist_ctrl.viewHistory(
-            csrRepID=user.id, page=page
-        )
-    except CSRAuthError as e:
-        flash(str(e), "error")
-        return redirect(url_for("dashboard"))
-
-    service_types = _csr_service_types(user.id)
-    return render_template(
-        "completed_history/csr_list.html",
-        items=items,
-        total_count=total_count,
-        page_meta=page_meta,
-        service_types=service_types,
-        filters=None,
-    )
+    return listCompletedHistoryUI.displayPage()
 
 @app.route('/csr/completed-history/search')
 @require_login
 def csrSearchCompletedHistory():
-    user = auth_controller.get_current_user()
-    if not user or user.user_profile.profile_name != "CSR Rep":
-        flash("Access denied. CSR Rep only.", "error")
-        return redirect(url_for("dashboard"))
-
-    serviceType = (request.args.get("serviceType") or "").strip() or None
-    fromDate    = (request.args.get("from") or "").strip() or None
-    toDate      = (request.args.get("to") or "").strip() or None
-    page        = request.args.get("page", default=1, type=int)
-
-    try:
-        items, total_count, page_meta = csr_search_hist_ctrl.searchCompleted(
-            csrRepID=user.id,
-            serviceType=serviceType,
-            fromDate=fromDate,
-            toDate=toDate,
-            page=page,
-        )
-    except (CSRAuthError, CSRValidationError) as e:
-        flash(str(e), "error")
-        return redirect(url_for("csrViewCompletedHistory"))
-
-    service_types = _csr_service_types(user.id)
-    return render_template(
-        "completed_history/csr_list.html",
-        items=items,
-        total_count=total_count,
-        page_meta=page_meta,
-        service_types=service_types,
-        filters={"serviceType": serviceType, "from": fromDate, "to": toDate},
-    )
+    return csrCompletedHistoryUI.onClickHistory()
 
 @app.route('/csr/completed-history/<int:match_id>')
 @require_login
 def csrViewCompletedDetails(match_id: int):
-    user = auth_controller.get_current_user()
-    if not user or user.user_profile.profile_name != "CSR Rep":
-        flash("Access denied. CSR Rep only.", "error")
-        return redirect(url_for("dashboard"))
-
-    try:
-        m = csr_view_hist_ctrl.viewDetails(csrRepID=user.id, matchID=match_id)
-    except CSRAuthError as e:
-        flash(str(e), "error")
-        return redirect(url_for("csrViewCompletedHistory"))
-
-    # Template built to mirror request details wireframe
-    return render_template("completed_history/details.html", m=m)
+    return viewCompletedDetailsUI.viewDetails(match_id)
 
 # ==================== ERROR HANDLERS ====================
 

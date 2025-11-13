@@ -7,11 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from database.db_config import get_session
 from entities.match import Match
 
-
-class AuthError(Exception):
-    """Raised when a user is not authorized to view the requested resource."""
-
-
 class CSRViewHistoryCtrl:
     """
     Public API:
@@ -29,9 +24,6 @@ class CSRViewHistoryCtrl:
     # -------------------------
 
     def viewHistory(self, csrRepID: int, page: int = 1) -> Tuple[List[Any], int, Dict[str, int]]:
-        if not self._validate_access(csrRepID):
-            raise AuthError("Not authorised to view this CSR's completed services.")
-
         page = self._sanitize_page(page)
         items, total_count = Match.findCompletedByCSR(
             self.session,
@@ -41,13 +33,20 @@ class CSRViewHistoryCtrl:
         )
         page_meta = self._make_page_meta(total_count, page)
         return items, total_count, page_meta
+    
+    def getServiceTypes(self, csrRepID: int) -> List[str]:
+        return Match.getServiceTypes(self.session, csrRepID)
 
     def viewDetails(self, csrRepID: int, matchID: int):
         if not self._validate_access(csrRepID):
-            raise AuthError("Not authorised to view this CSR's completed services.")
+            return 0 # Unauthorized
         m = Match.findById(self.session, int(matchID))
-        if not m or m.csr_rep_id != int(csrRepID) or m.status != "Completed":
-            raise AuthError("You are not authorised to view this completed service or it does not exist.")
+        if not m:
+            return 1 # Not found
+        elif m.csr_rep_id != int(csrRepID):
+            return 2 # Unauthorized
+        elif m.status != "Completed":
+            return 3 # Not completed
         return m
 
     # -------------------------

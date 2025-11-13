@@ -10,7 +10,7 @@
         </svg>
         Edit Request
     </h1>
-    <a href="{{ url_for('listRequests') }}" class="btn btn-secondary">← Back to Details</a>
+    <a href="{{ url_for('viewRequest', request_id=request.request_id) }}" class="btn btn-secondary">← Back to Details</a>
 </div>
 
 <div class="form-container">

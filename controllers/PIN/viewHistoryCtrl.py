@@ -11,7 +11,6 @@ from entities.match import Match
 class AuthError(Exception):
     """Raised when a user is not authorized to view the requested resource."""
 
-
 class ViewHistoryCtrl:
     """
     Controller for the 'Completed Match History' flow.
@@ -111,7 +110,6 @@ class ViewHistoryCtrl:
             "limit": size,
         }
 
-
 # Optional: tiny demo guard (safe to remove in production)
 if __name__ == "__main__":
     ctrl = ViewHistoryCtrl()
@@ -120,4 +118,3 @@ if __name__ == "__main__":
         print(f"items={len(items)} total={total} meta={meta}")
     except AuthError as e:
         print("AUTH ERROR:", e)
-

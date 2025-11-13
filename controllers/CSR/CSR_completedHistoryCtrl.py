@@ -9,17 +9,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from database.db_config import get_session
 from entities.match import Match
 
-
-class AuthError(Exception):
-    pass
-
-
 class ValidationError(Exception):
     pass
 
-
 DateLike = Union[str, date, datetime, None]
-
 
 class CSRCompletedHistoryCtrl:
     """
@@ -41,8 +34,7 @@ class CSRCompletedHistoryCtrl:
         toDate: DateLike = None,
         page: int = 1,
     ) -> Tuple[List[Any], int, Dict[str, int]]:
-        if not self._validate_access(csrRepID):
-            raise AuthError("Not authorised to view this CSR's completed services.")
+
 
         page = self._sanitize_page(page)
         norm_from, norm_to = self._validate_date_range(fromDate, toDate)

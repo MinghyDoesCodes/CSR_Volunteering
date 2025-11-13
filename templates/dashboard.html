@@ -81,7 +81,7 @@
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
         </div>
-        <h3>Completed Match History</h3>
+        <h3>Completed Match History (PIN)</h3>
         <p>Review all past assistance received</p>
         <a href="{{ url_for('viewCompletedHistory') }}" class="btn btn-primary">View History</a>
     </div>
@@ -110,6 +110,18 @@
         <h3>Search Shortlist</h3>
         <p>Search shortlisted volunteer opportunities</p>
         <a href="{{ url_for('searchShortlists') }}" class="btn btn-primary">Search Shortlists</a>   
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+        </div>
+        <h3>Completed Match History (CSR Rep)</h3>
+        <p>Review all past assistance provided</p>
+        <a href="{{ url_for('csrViewCompletedHistory') }}" class="btn btn-primary">View Completed History</a>
     </div>
     {% endif %}
 

@@ -130,6 +130,21 @@ class Match(Base):
             )
             .filter(cls.csr_rep_id == int(csr_rep_id), cls.status == "Completed")
         )
+    
+    @classmethod
+    def getServiceTypes(cls, session, csr_rep_id) -> List[str]:
+        rows = (
+            session.query(cls.service_type)
+            .filter(
+                cls.csr_rep_id == int(csr_rep_id),
+                cls.status == "Completed",
+                cls.service_type.isnot(None),
+            )
+            .distinct()
+            .order_by(cls.service_type)
+            .all()
+        )
+        return [r[0] for r in rows if r[0]]
 
     @classmethod
     def findCompletedByCSR(

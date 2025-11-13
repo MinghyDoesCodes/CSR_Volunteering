@@ -13,6 +13,15 @@
         Category Details
     </h1>
     <div class="page-actions">
+        {% if user_profile == 'Platform Manager' %}
+        <a href="{{ url_for('updateCategory', category_id=category.category_id) }}" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit
+        </a>
+        {% endif %}
         <a href="{{ url_for('listCategories') }}" class="btn btn-secondary">← Back to List</a>
     </div>
 </div>

@@ -6,9 +6,9 @@ from controllers.Category.viewCategoryCtrl import ViewCategoryCtrl
 from controllers.Category.updateCategoryCtrl import UpdateCategoryCtrl
 from controllers.Category.suspendCategoryCtrl import SuspendCategoryCtrl
 from controllers.Category.searchCategoryCtrl import SearchCategoryCtrl
-from controllers.createDailyReportCtrl import CreateDailyReportCtrl
-from controllers.createWeeklyReportCtrl import CreateWeeklyReportCtrl
-from controllers.createMonthlyReportCtrl import CreateMonthlyReportCtrl
+from controllers.PM.createDailyReportCtrl import CreateDailyReportCtrl
+from controllers.PM.createWeeklyReportCtrl import CreateWeeklyReportCtrl
+from controllers.PM.createMonthlyReportCtrl import CreateMonthlyReportCtrl
 from datetime import datetime
 
 class ListCategoryUI:
@@ -48,14 +48,19 @@ class CreateCategoryUI:
 class ViewCategoryUI:
     def __init__(self):
         self.c = ViewCategoryCtrl()
+        self.a = AuthenticationController()
 
     def viewCategory(self, category_id):
+        current_user = self.a.get_current_user()
+        user_profile = current_user.user_profile.profile_name if current_user else None
         category = self.c.viewCategory(category_id)
         if not category:  # Not found
             flash(f"Category with ID {category_id} not found", 'error')
             return redirect(url_for('listCategories'))
         
-        return render_template('categories/view.html', category=category)
+        render = render_template('categories/view.html', category=category, user_profile=user_profile)
+        close_session()
+        return render
     
 class UpdateCategoryUI:
     def __init__(self):

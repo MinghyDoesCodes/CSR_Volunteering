@@ -5,7 +5,7 @@ Generates monthly reports for Platform Managers
 
 from datetime import date, datetime, timedelta
 
-from controllers.createDailyReportCtrl import CreateDailyReportCtrl
+from controllers.PM.createDailyReportCtrl import CreateDailyReportCtrl
 
 
 class CreateMonthlyReportCtrl(CreateDailyReportCtrl):

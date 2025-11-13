@@ -7,15 +7,6 @@ from entities.request import Request
 from entities.user_account import UserAccount
 
 class Shortlist(Base):
-    """
-    Entity class for Shortlist
-    
-    This represents when a CSR Rep shortlists (bookmarks) a request.
-    Each shortlist records:
-    - Which request was shortlisted
-    - Which CSR Rep shortlisted it
-    - When they shortlisted it
-    """
     __tablename__ = 'shortlists'
     
     # Primary key
@@ -54,25 +45,28 @@ class Shortlist(Base):
         return session.query(cls).filter_by(request_id=request_id).count()
     
     @classmethod
+    def checkIfShortlisted(cls, session, request_id, csr_rep_id):
+        """Check if this request is shortlisted by the given CSR Rep"""
+        return session.query(cls).filter_by(
+            request_id=request_id,
+            csr_rep_id=csr_rep_id
+        ).first() is not None
+    
+    @classmethod
     def createShortlist(cls, session, request_id, csr_rep_id):
-        """
-        Create a new shortlist entry
         
-        Args:
-            session: Database session
-            request_id (int): The request being shortlisted
-            csr_rep_id (int): The CSR Rep who is shortlisting
-            
-        Returns:
-            Shortlist: New shortlist instance
-        """
+        # Check if already shortlisted
+        existing = cls.checkIfShortlisted(session, request_id, csr_rep_id)
+        if existing:
+            return 1 # Already shortlisted
+
         shortlist = cls(
             request_id=request_id,
             csr_rep_id=csr_rep_id
         )
         session.add(shortlist)
         session.commit()
-        return shortlist
+        return 2 # Successfully shortlisted
 
     @classmethod
     def removeShortlist(cls, session, request_id, csr_rep_id):

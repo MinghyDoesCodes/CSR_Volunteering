@@ -31,7 +31,7 @@
             </button>
         </form>
         {% elif current_user.user_profile.profile_name == 'CSR Rep' and is_shortlisted %}
-        <span class="badge badge-success">Already in Shortlist</span>
+        <span class="badge badge-success">Shortlisted</span>
         {% endif %}
         <a href="{{ url_for('listRequests') }}" class="btn btn-secondary">← Back to List</a>
     </div>
